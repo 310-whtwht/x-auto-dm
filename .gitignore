@@ -1,0 +1,7 @@
+# .gitignoreファイルを作成
+cat << EOF > .gitignore
+.env*
+.next
+node_modules
+followers.csv
+EOF

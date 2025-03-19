@@ -42,6 +42,7 @@ export async function getDefaultSettings(): Promise<Settings> {
     messages: ["", "", "", "", ""],
     skipExisting: true,
     followBeforeDM: true,
+    followerUrl: "",
   };
 }
 

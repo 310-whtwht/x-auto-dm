@@ -253,7 +253,7 @@ export function SettingsDialog({
               <TextField
                 fullWidth
                 label="フォロワーURL"
-                placeholder="https://x.com/username/followers"
+                placeholder="https://x.com/{username}/followers"
                 value={localSettings.followerUrl}
                 onChange={handleUrlChange}
                 error={!!urlError}

@@ -29,12 +29,16 @@ async function login(page: Page, userId: string, password: string) {
   // ユーザーID入力
   await page.type('input[name="text"]', userId);
   await page.keyboard.press("Enter");
-  await page.waitForTimeout(2000);
+  await page.waitForFunction(
+    "new Promise(resolve => setTimeout(resolve, 2000))"
+  );
 
   // パスワード入力
   await page.type('input[name="password"]', password);
   await page.keyboard.press("Enter");
-  await page.waitForTimeout(5000);
+  await page.waitForFunction(
+    "new Promise(resolve => setTimeout(resolve, 5000))"
+  );
 
   isLoggedIn = true;
 }
@@ -53,7 +57,9 @@ export async function extractUsers({
     await login(page, "your_user_id", "your_password");
 
     await page.goto(url);
-    await page.waitForTimeout(5000);
+    await page.waitForFunction(
+      "new Promise(resolve => setTimeout(resolve, 5000))"
+    );
 
     let lastHeight = await page.evaluate("document.body.scrollHeight");
 
@@ -75,27 +81,30 @@ export async function extractUsers({
             let profileStart = false;
 
             texts.forEach((text, i) => {
-              if (text.startsWith("@")) {
+              if (text && text.startsWith("@")) {
                 userId = text.substring(1);
               } else if (
-                ["フォローされています", "フォロー中", "フォロー"].includes(
-                  text
+                ["フォローされています", "フォロー中", "フォロー", "フォローバック"].includes(
+                  text || ""
                 )
               ) {
                 profileStart = true;
               } else if (profileStart) {
                 profile += text + " ";
+              } else if (text && text.trim() === "") {
+                // 空のテキストは無視
+                return;
               }
             });
 
             // ニックネーム抽出（| @ ｜で区切られた場合）
-            const nickName = name.split(/[\|@｜]/)[0].trim();
+            const nickName = name ? name.split(/[\|@｜]/)[0].trim() : "";
 
             if (userId && name) {
               userData.push({
                 userId,
                 name,
-                nickName,
+                nickname: nickName,
                 profile: profile.trim(),
                 status: "pending",
                 isSend: true,
@@ -117,7 +126,9 @@ export async function extractUsers({
 
       // スクロール
       await page.evaluate("window.scrollTo(0, document.body.scrollHeight)");
-      await page.waitForTimeout(2000);
+      await page.waitForFunction(
+        "new Promise(resolve => setTimeout(resolve, 2000))"
+      );
 
       const newHeight = await page.evaluate("document.body.scrollHeight");
       if (newHeight === lastHeight) {
@@ -161,7 +172,9 @@ export async function sendDM(user: User, message: string): Promise<boolean> {
   const page = await browser.newPage();
   try {
     await page.goto(`https://twitter.com/${user.userId}`);
-    await page.waitForTimeout(2000);
+    await page.waitForFunction(
+      "new Promise(resolve => setTimeout(resolve, 2000))"
+    );
 
     // DMボタンを探す
     const dmButton = await page.$('button[data-testid="sendDMFromProfile"]');
@@ -170,18 +183,24 @@ export async function sendDM(user: User, message: string): Promise<boolean> {
       const followButton = await page.$('button[data-testid="follow"]');
       if (followButton) {
         await followButton.click();
-        await page.waitForTimeout(2000);
+        await page.waitForFunction(
+          "new Promise(resolve => setTimeout(resolve, 2000))"
+        );
       }
       return false;
     }
 
     await dmButton.click();
-    await page.waitForTimeout(2000);
+    await page.waitForFunction(
+      "new Promise(resolve => setTimeout(resolve, 2000))"
+    );
 
     // メッセージ入力と送信
     await page.type('div[data-testid="dmComposerTextInput"]', message);
     await page.click('div[data-testid="dmComposerSendButton"]');
-    await page.waitForTimeout(1000);
+    await page.waitForFunction(
+      "new Promise(resolve => setTimeout(resolve, 1000))"
+    );
 
     return true;
   } catch (error) {

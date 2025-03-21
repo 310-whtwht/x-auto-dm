@@ -11,7 +11,22 @@ interface DataTableProps {
 }
 
 export function DataTable({ data, onUserUpdate }: DataTableProps) {
-  const [selectAll, setSelectAll] = useState(true); // デフォルトで全選択
+  const [selectAll, setSelectAll] = useState(data.every((user) => user.isSend));
+
+  const handleCheckboxChange = (userId: string) => {
+    const user = data.find((u) => u.userId === userId);
+    if (user) {
+      onUserUpdate(userId, { isSend: !user.isSend });
+    }
+  };
+
+  const handleSelectAll = () => {
+    const newValue = !selectAll;
+    data.forEach((user) => {
+      onUserUpdate(user.userId, { isSend: newValue });
+    });
+    setSelectAll(newValue);
+  };
 
   const columns: GridColDef[] = [
     {
@@ -21,21 +36,14 @@ export function DataTable({ data, onUserUpdate }: DataTableProps) {
       renderHeader: () => (
         <Checkbox
           checked={selectAll}
-          onChange={(event) => {
-            setSelectAll(event.target.checked);
-            // 全ユーザーの選択状態を更新
-            data.forEach((user) => {
-              onUserUpdate(user.userId, { isSend: event.target.checked });
-            });
-          }}
+          indeterminate={data.some((user) => user.isSend) && !selectAll}
+          onChange={handleSelectAll}
         />
       ),
       renderCell: (params) => (
         <Checkbox
           checked={params.row.isSend}
-          onChange={(event) => {
-            onUserUpdate(params.row.userId, { isSend: event.target.checked });
-          }}
+          onChange={() => handleCheckboxChange(params.row.userId)}
         />
       ),
     },
@@ -152,7 +160,6 @@ export function DataTable({ data, onUserUpdate }: DataTableProps) {
   const rows = data.map((user) => ({
     id: user.userId,
     ...user,
-    isSend: true, // デフォルトで選択状態に
   }));
 
   return (

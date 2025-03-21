@@ -297,17 +297,3 @@ export async function extractUsers(url: string): Promise<User[]> {
     }
   }
 }
-
-export async function sendDM(
-  user: User,
-  messageTemplate: string
-): Promise<boolean> {
-  try {
-    const message = replaceMessageVariables(messageTemplate, user);
-    // ... 実際のDM送信処理
-    return true;
-  } catch (error) {
-    console.error("Failed to send DM:", error);
-    return false;
-  }
-}

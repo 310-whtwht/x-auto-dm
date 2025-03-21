@@ -10,14 +10,30 @@ interface ExtractConfig {
 let browser: Browser | null = null;
 let isLoggedIn = false;
 
-async function initBrowser() {
-  if (!browser) {
+export async function initBrowser(): Promise<Browser> {
+  if (browser) {
+    console.log("ブラウザは既に起動しています");
+    return browser;
+  }
+
+  console.log("ブラウザを初期化中...");
+  try {
     browser = await puppeteer.launch({
       headless: false,
-      defaultViewport: null,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-web-security",
+        "--disable-features=IsolateOrigins,site-per-process",
+      ],
     });
+    console.log("ブラウザの初期化が完了しました");
+    return browser;
+  } catch (error) {
+    console.error("ブラウザの初期化に失敗しました:", error);
+    throw error;
   }
-  return browser;
 }
 
 async function login(page: Page, userId: string, password: string) {
@@ -84,9 +100,12 @@ export async function extractUsers({
               if (text && text.startsWith("@")) {
                 userId = text.substring(1);
               } else if (
-                ["フォローされています", "フォロー中", "フォロー", "フォローバック"].includes(
-                  text || ""
-                )
+                [
+                  "フォローされています",
+                  "フォロー中",
+                  "フォロー",
+                  "フォローバック",
+                ].includes(text || "")
               ) {
                 profileStart = true;
               } else if (profileStart) {
@@ -166,45 +185,94 @@ function filterUsersByKeywords(
   });
 }
 
+// 既存のChromeセッションに接続する関数
+export async function connectToBrowser(): Promise<void> {
+  if (browser) {
+    console.log("既にブラウザに接続済みです");
+    return;
+  }
+
+  console.log("既存のブラウザセッションに接続を試みます...");
+  try {
+    // Chrome DevTools Protocolに接続
+    browser = await puppeteer.connect({
+      browserURL: "http://localhost:9222",
+      defaultViewport: null,
+    });
+    console.log("既存のブラウザセッションへの接続が完了しました");
+  } catch (error) {
+    console.error("ブラウザへの接続に失敗しました:", error);
+    throw error;
+  }
+}
+
 export async function sendDM(user: User, message: string): Promise<boolean> {
-  if (!browser) return false;
+  console.log("=== sendDM開始 ===");
+
+  if (!browser) {
+    console.log("ブラウザ接続を開始します");
+    try {
+      await connectToBrowser();
+      if (!browser) {
+        throw new Error("ブラウザの接続に失敗しました");
+      }
+    } catch (error) {
+      console.error("ブラウザへの接続に失敗しました:", error);
+      return false;
+    }
+  }
 
   const page = await browser.newPage();
   try {
-    await page.goto(`https://twitter.com/${user.userId}`);
-    await page.waitForFunction(
-      "new Promise(resolve => setTimeout(resolve, 2000))"
-    );
+    // プロフィールページのHTMLからユーザーIDを取得
+    console.log(`${user.userId}のプロフィールページに遷移中...`);
+    await page.goto(`https://twitter.com/${user.userId}`, {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
 
-    // DMボタンを探す
-    const dmButton = await page.$('button[data-testid="sendDMFromProfile"]');
-    if (!dmButton) {
-      // フォローボタンを探してクリック
-      const followButton = await page.$('button[data-testid="follow"]');
-      if (followButton) {
-        await followButton.click();
-        await page.waitForFunction(
-          "new Promise(resolve => setTimeout(resolve, 2000))"
-        );
+    // __INITIAL_STATE__からユーザーIDを取得
+    const userId = await page.evaluate(() => {
+      const state = (window as any).__INITIAL_STATE__;
+      if (state?.entities?.users?.entities) {
+        const userEntities = state.entities.users.entities;
+        const userKey = Object.keys(userEntities)[0];
+        return userKey;
       }
+      return null;
+    });
+
+    if (!userId) {
+      console.error("ユーザーIDの取得に失敗しました");
       return false;
     }
 
-    await dmButton.click();
-    await page.waitForFunction(
-      "new Promise(resolve => setTimeout(resolve, 2000))"
-    );
+    // メッセージページに直接遷移
+    console.log(`メッセージページに遷移: ${userId}`);
+    await page.goto(`https://twitter.com/messages/${userId}`, {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
 
     // メッセージ入力と送信
-    await page.type('div[data-testid="dmComposerTextInput"]', message);
-    await page.click('div[data-testid="dmComposerSendButton"]');
-    await page.waitForFunction(
-      "new Promise(resolve => setTimeout(resolve, 1000))"
-    );
+    console.log("メッセージを入力中...");
+    await page.waitForSelector('[data-testid="dmComposerTextInput"]');
+    await page.type('[data-testid="dmComposerTextInput"]', message);
 
+    console.log("送信ボタンをクリック...");
+    await page.click('[data-testid="dmComposerSendButton"]');
+
+    console.log("送信完了");
     return true;
   } catch (error) {
-    console.error("Error sending DM:", error);
+    console.error("DM送信中にエラーが発生しました:", error);
+    if (error && typeof error === "object" && "name" in error) {
+      if (error.name === "TimeoutError") {
+        console.error(
+          "タイムアウトが発生しました。ネットワーク状態を確認してください。"
+        );
+      }
+    }
     return false;
   } finally {
     await page.close();

@@ -1,6 +1,9 @@
 import './globals.css';
-import ThemeRegistry from '@/components/theme-registry';
+import { ThemeProvider } from '@/components/theme-provider';
 import type { Metadata } from 'next';
+
+// IBM Plex Sans JPフォントのインポート
+import '@fontsource/ibm-plex-sans-jp/300.css';
 
 export const metadata: Metadata = {
   title: 'X Auto DM',
@@ -15,7 +18,9 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
-        <ThemeRegistry>{children}</ThemeRegistry>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

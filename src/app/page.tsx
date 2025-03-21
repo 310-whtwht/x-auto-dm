@@ -5,7 +5,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { DataTable } from "@/components/ui/data-table";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
-import { extractUsers, sendDM, launchChromeWithDebugger } from "./actions";
+import { extractUsers, launchChromeWithDebugger } from "./actions";
 import { getRandomMessage, getRandomInterval, sleep } from "@/lib/utils";
 import {
   Box,
@@ -32,6 +32,7 @@ import {
   Launch as LaunchIcon,
 } from '@mui/icons-material';
 import React from "react";
+import { sendDM } from "@/lib/scraper";
 
 export default function Home() {
   const { settings, updateSettings, resetSettings } = useSettings();
@@ -85,25 +86,65 @@ export default function Home() {
 
   const handleSend = async () => {
     try {
+      if (!settings.messages || settings.messages.length === 0) {
+        setLogs(prev => [...prev, "メッセージテンプレートが設定されていません"]);
+        return;
+      }
+
+      const targetUsers = users.filter(user => user.isSend);
+      if (targetUsers.length === 0) {
+        setLogs(prev => [...prev, "送信対象のユーザーが選択されていません"]);
+        return;
+      }
+
       setIsSending(true);
-      for (const user of users) {
-        if (user.isSend) {
-          // ランダムにメッセージを選択
-          const messageTemplate =
-            settings.messages[
-              Math.floor(Math.random() * settings.messages.length)
-            ];
-          const success = await sendDM(user, messageTemplate);
-          await updateUser(user.userId, {
-            status: success ? "success" : "error",
+      setLogs(prev => [...prev, "DM送信処理を開始します"]);
+
+      for (const user of targetUsers) {
+        try {
+          setLogs(prev => [...prev, `${user.userId} へのDM送信を開始...`]);
+          const messageTemplate = settings.messages[
+            Math.floor(Math.random() * settings.messages.length)
+          ];
+
+          const response = await fetch("/api/send-dm", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user,
+              message: messageTemplate,
+            }),
           });
+
+          const data = await response.json();
+          
+          if (data.success) {
+            setLogs(prev => [...prev, `${user.userId} へのDM送信が成功しました`]);
+            await updateUser(user.userId, { status: "success" });
+          } else {
+            throw new Error(data.error || "DM送信に失敗しました");
+          }
+
+          // 連続送信による制限を避けるため、少し待機
+          await new Promise(resolve => setTimeout(resolve, 2000));
+
+        } catch (error: unknown) {
+          console.error(`Failed to send DM to ${user.userId}:`, error);
+          const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
+          setLogs(prev => [...prev, `${user.userId} へのDM送信が失敗: ${errorMessage}`]);
+          await updateUser(user.userId, { status: "error" });
         }
       }
-    } catch (error) {
-      console.error("Failed to send DMs:", error);
-      setLogs((prev) => [...prev, "DM送信に失敗しました"]);
+
+    } catch (error: unknown) {
+      console.error("DM送信プロセス全体でエラーが発生:", error);
+      const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
+      setLogs(prev => [...prev, `DM送信処理でエラーが発生: ${errorMessage}`]);
     } finally {
       setIsSending(false);
+      setLogs(prev => [...prev, "DM送信処理が完了しました"]);
     }
   };
 
@@ -207,9 +248,18 @@ export default function Home() {
 
   const handleLaunchChrome = async () => {
     try {
-      await launchChromeWithDebugger();
+      const response = await fetch("/api/launch-chrome", {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (data.success) {
+        setLogs(prev => [...prev, "Chromeの起動に成功しました"]);
+      } else {
+        setLogs(prev => [...prev, "Chromeの起動に失敗しました"]);
+      }
     } catch (error) {
       console.error('Failed to launch Chrome:', error);
+      setLogs(prev => [...prev, "Chromeの起動中にエラーが発生しました"]);
     }
   };
 
@@ -279,9 +329,9 @@ export default function Home() {
               color="success"
               startIcon={<SendIcon />}
               onClick={handleSend}
-              disabled={isLoading || users.length === 0}
+              disabled={isLoading || users.length === 0 || isSending}
             >
-              送信
+              {isSending ? "送信中..." : "送信"}
             </Button>
           </Box>
         </Box>

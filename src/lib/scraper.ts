@@ -224,35 +224,37 @@ export async function sendDM(user: User, message: string): Promise<boolean> {
 
   const page = await browser.newPage();
   try {
-    // プロフィールページのHTMLからユーザーIDを取得
     console.log(`${user.userId}のプロフィールページに遷移中...`);
     await page.goto(`https://twitter.com/${user.userId}`, {
       waitUntil: "domcontentloaded",
       timeout: 60000,
     });
 
-    // __INITIAL_STATE__からユーザーIDを取得
-    const userId = await page.evaluate(() => {
-      const state = (window as any).__INITIAL_STATE__;
-      if (state?.entities?.users?.entities) {
-        const userEntities = state.entities.users.entities;
-        const userKey = Object.keys(userEntities)[0];
-        return userKey;
+    await page.waitForFunction(
+      "new Promise(resolve => setTimeout(resolve, 10000))"
+    );
+
+    // aria-labelを使用してDMボタンを検索
+    const dmButtonExists = await page.evaluate(() => {
+      const dmButton = document.querySelector(
+        '[aria-label="メッセージ"]'
+      ) as HTMLElement;
+      if (dmButton) {
+        dmButton.click();
+        return true;
       }
-      return null;
+      return false;
     });
 
-    if (!userId) {
-      console.error("ユーザーIDの取得に失敗しました");
+    if (!dmButtonExists) {
+      console.log("DMボタンが見つかりませんでした");
       return false;
     }
 
-    // メッセージページに直接遷移
-    console.log(`メッセージページに遷移: ${userId}`);
-    await page.goto(`https://twitter.com/messages/${userId}`, {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
+    console.log("DMボタンをクリックしました。DMページの読み込みを待機中...");
+    await page.waitForFunction(
+      "new Promise(resolve => setTimeout(resolve, 30000))"
+    );
 
     // メッセージ入力と送信
     console.log("メッセージを入力中...");

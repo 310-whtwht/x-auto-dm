@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS: Settings = {
     max: 600,
   },
   dailyLimit: 50,
-  messages: ["${nick_name}さん、はじめまして！"],
+  messages: ["$${nick_name}さん、はじめまして！"],
   skipExisting: true,
   followBeforeDM: true,
 };

@@ -209,75 +209,32 @@ export async function connectToBrowser(): Promise<void> {
 export async function sendDM(user: User, message: string): Promise<boolean> {
   console.log("=== sendDM開始 ===");
 
-  if (!browser) {
-    console.log("ブラウザ接続を開始します");
-    try {
-      await connectToBrowser();
-      if (!browser) {
-        throw new Error("ブラウザの接続に失敗しました");
-      }
-    } catch (error) {
-      console.error("ブラウザへの接続に失敗しました:", error);
-      return false;
-    }
-  }
-
-  const page = await browser.newPage();
   try {
-    console.log(`${user.userId}のプロフィールページに遷移中...`);
-    await page.goto(`https://twitter.com/${user.userId}`, {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
+    // usePython: trueを必ず含めるように修正
+    const response = await fetch("/api/send-dm", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user,
+        message,
+        usePython: true, // このフラグを必ず含める
+      }),
     });
 
-    await page.waitForFunction(
-      "new Promise(resolve => setTimeout(resolve, 10000))"
-    );
+    const data = await response.json();
 
-    // aria-labelを使用してDMボタンを検索
-    const dmButtonExists = await page.evaluate(() => {
-      const dmButton = document.querySelector(
-        '[aria-label="メッセージ"]'
-      ) as HTMLElement;
-      if (dmButton) {
-        dmButton.click();
-        return true;
-      }
-      return false;
-    });
-
-    if (!dmButtonExists) {
-      console.log("DMボタンが見つかりませんでした");
-      return false;
+    if (!data.success) {
+      console.error("送信エラー:", data.error);
+      throw new Error(data.error || "DM送信に失敗しました");
     }
-
-    console.log("DMボタンをクリックしました。DMページの読み込みを待機中...");
-    await page.waitForFunction(
-      "new Promise(resolve => setTimeout(resolve, 30000))"
-    );
-
-    // メッセージ入力と送信
-    console.log("メッセージを入力中...");
-    await page.waitForSelector('[data-testid="dmComposerTextInput"]');
-    await page.type('[data-testid="dmComposerTextInput"]', message);
-
-    console.log("送信ボタンをクリック...");
-    await page.click('[data-testid="dmComposerSendButton"]');
 
     console.log("送信完了");
     return true;
   } catch (error) {
     console.error("DM送信中にエラーが発生しました:", error);
-    if (error && typeof error === "object" && "name" in error) {
-      if (error.name === "TimeoutError") {
-        console.error(
-          "タイムアウトが発生しました。ネットワーク状態を確認してください。"
-        );
-      }
-    }
     return false;
-  } finally {
-    await page.close();
   }
 }
 

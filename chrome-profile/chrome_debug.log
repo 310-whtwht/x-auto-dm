@@ -1,0 +1,4 @@
+[36939:259:0325/082742.422386:INFO:chrome_browser_cloud_management_controller.cc(196)] No machine level policy manager exists.
+[36939:69895:0325/082742.530983:ERROR:socket_posix.cc(147)] bind() failed: Address already in use (48)
+[36939:259:0325/082744.881458:ERROR:new_tab_page_handler.cc(1341)] NewTabPage loaded into a non-browser-tab context
+[36939:259:0325/082756.401614:ERROR:new_tab_page_handler.cc(1341)] NewTabPage loaded into a non-browser-tab context

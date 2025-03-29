@@ -115,6 +115,13 @@ export default function Home() {
             body: JSON.stringify({
               user,
               message: messageTemplate,
+              settings: {
+                interval: {
+                  min: settings.interval.min,
+                  max: settings.interval.max
+                },
+                dailyLimit: settings.dailyLimit
+              }
             }),
           });
 

@@ -9,7 +9,7 @@ import { ReactNode } from "react";
 const theme = createTheme({
   typography: {
     fontFamily: [
-      "IBM Plex Sans JP",
+      "Sawarabi Gothic",
       "-apple-system",
       "BlinkMacSystemFont",
       '"Segoe UI"',

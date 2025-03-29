@@ -1,27 +1,43 @@
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
 import path from "path";
-import { User } from "@/types/user";
+import { User } from "@/types";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { user, message } = body;
+    const { user, message, settings } = body;
 
-    console.log("リクエスト受信:", { user, message });
+    console.log("リクエスト受信:", { user, message, settings });
 
-    if (!user || !message) {
+    if (!user || !message || !settings) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "ユーザーとメッセージは必須です",
+          error: "ユーザー、メッセージ、設定は必須です",
         }),
         { status: 400 }
       );
     }
 
-    // usePythonフラグに関係なく、常にPythonスクリプトを実行する
-    return await handlePythonExecution(user, message);
+    const { interval, dailyLimit } = settings;
+    const args = [
+      JSON.stringify(user),
+      message,
+      interval.min.toString(),
+      interval.max.toString(),
+      dailyLimit.toString(),
+    ];
+
+    console.log("Python実行パラメータ:", {
+      user: JSON.stringify(user),
+      message,
+      min: settings.interval.min,
+      max: settings.interval.max,
+      limit: settings.dailyLimit,
+    });
+
+    return await handlePythonExecution(user, message, settings);
   } catch (error) {
     console.error("APIエラー:", error);
     return new Response(
@@ -34,12 +50,19 @@ export async function POST(req: Request) {
   }
 }
 
-async function handlePythonExecution(user: User, message: string) {
+async function handlePythonExecution(
+  user: User,
+  message: string,
+  settings: { interval: { min: number; max: number }; dailyLimit: number }
+) {
   return new Promise((resolve) => {
     const pythonProcess = spawn("python3", [
       "scripts/send_dm.py",
       JSON.stringify(user),
       message,
+      settings.interval.min.toString(),
+      settings.interval.max.toString(),
+      settings.dailyLimit.toString(),
     ]);
 
     let output = "";

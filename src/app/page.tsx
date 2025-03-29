@@ -106,7 +106,9 @@ export default function Home() {
 
       for (const user of targetUsers) {
         try {
-          await updateUser(user.userId, { status: "pending" });
+          if (user.status === "pending") {
+            await updateUser(user.userId, { status: "pending" });
+          }
           setLogs(prev => [...prev, `${user.userId} へのDM送信を開始...`]);
 
           const messageTemplate = settings.messages[

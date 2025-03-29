@@ -200,8 +200,11 @@ def send_dm(user: User, message: str, settings: SendSettings) -> Tuple[bool, str
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
-        print("Error: Invalid number of arguments")
-        print("Usage: python send_dm.py <user_json> <message> <min_interval> <max_interval> <daily_limit>")
+        print(json.dumps({
+            "success": False,
+            "error": "Invalid number of arguments",
+            "status": "error"
+        }))
         sys.exit(1)
 
     try:
@@ -227,13 +230,16 @@ if __name__ == "__main__":
         )
         
         success, error, status = send_dm(user, message, settings)
-        # 終了コードとステータスを標準出力に出力
-        print(json.dumps({
+        
+        # 結果をJSON形式で出力
+        result = {
             "success": success,
             "error": error,
             "status": status
-        }))
+        }
+        print(json.dumps(result))  # 必ずJSONとして出力
         sys.exit(0 if success else 1)
+        
     except Exception as e:
         print(json.dumps({
             "success": False,

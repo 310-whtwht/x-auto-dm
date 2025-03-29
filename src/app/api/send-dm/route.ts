@@ -74,24 +74,37 @@ const handlePythonExecution = async (
 
     process.stdout.on("data", (data) => {
       outputData += data.toString();
+      console.log("Python stdout:", data.toString());
     });
 
     process.stderr.on("data", (data) => {
       errorData += data.toString();
+      console.log("Python stderr:", data.toString());
     });
 
     process.on("close", (code) => {
+      console.log("Process output:", outputData);
+      console.log("Process error:", errorData);
+      console.log("Exit code:", code);
+
       try {
-        const result = JSON.parse(outputData);
+        const lastLine =
+          outputData
+            .trim()
+            .split("\n")
+            .pop() || "";
+        const result = JSON.parse(lastLine);
+
         resolve({
           success: result.success,
           error: result.error || errorData,
           status: result.status,
         });
       } catch (e) {
+        console.error("JSON parse error:", e);
         resolve({
           success: false,
-          error: errorData || "Failed to parse Python script output",
+          error: `Failed to parse Python output: ${outputData}\nError: ${errorData}`,
           status: "error",
         });
       }

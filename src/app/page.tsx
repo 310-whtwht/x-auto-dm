@@ -91,7 +91,11 @@ export default function Home() {
         return;
       }
 
-      const targetUsers = users.filter(user => user.isSend);
+      const targetUsers = users.filter(user => 
+        user.isSend &&
+        (user.status === "followed" || user.status === "error" || user.status === "pending")
+      );
+      
       if (targetUsers.length === 0) {
         setLogs(prev => [...prev, "送信対象のユーザーが選択されていません"]);
         return;
@@ -102,7 +106,9 @@ export default function Home() {
 
       for (const user of targetUsers) {
         try {
+          await updateUser(user.userId, { status: "pending" });
           setLogs(prev => [...prev, `${user.userId} へのDM送信を開始...`]);
+
           const messageTemplate = settings.messages[
             Math.floor(Math.random() * settings.messages.length)
           ];
@@ -120,7 +126,8 @@ export default function Home() {
                   min: settings.interval.min,
                   max: settings.interval.max
                 },
-                dailyLimit: settings.dailyLimit
+                dailyLimit: settings.dailyLimit,
+                followBeforeDM: settings.followBeforeDM
               }
             }),
           });
@@ -129,7 +136,7 @@ export default function Home() {
           
           if (data.success) {
             setLogs(prev => [...prev, `${user.userId} へのDM送信が成功しました`]);
-            await updateUser(user.userId, { status: "success" });
+            await updateUser(user.userId, { status: data.status });
           } else {
             throw new Error(data.error || "DM送信に失敗しました");
           }

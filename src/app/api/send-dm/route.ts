@@ -3,19 +3,19 @@ import { spawn } from "child_process";
 import path from "path";
 import { User } from "@/types";
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
-    const { user, message, settings } = body;
+    const { user, message, settings } = await request.json();
 
     console.log("リクエスト受信:", { user, message, settings });
 
     if (!user || !message || !settings) {
-      return new Response(
-        JSON.stringify({
+      return NextResponse.json(
+        {
           success: false,
-          error: "ユーザー、メッセージ、設定は必須です",
-        }),
+          error: "必要なパラメータが不足しています",
+          status: "error",
+        },
         { status: 400 }
       );
     }
@@ -37,26 +37,30 @@ export async function POST(req: Request) {
       limit: settings.dailyLimit,
     });
 
-    return await handlePythonExecution(user, message, settings);
+    const result = await handlePythonExecution(user, message, settings);
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("APIエラー:", error);
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         success: false,
-        error: "DM送信中にエラーが発生しました",
-      }),
+        error:
+          error instanceof Error ? error.message : "不明なエラーが発生しました",
+        status: "error",
+      },
       { status: 500 }
     );
   }
 }
 
-async function handlePythonExecution(
+const handlePythonExecution = async (
   user: User,
   message: string,
-  settings: { interval: { min: number; max: number }; dailyLimit: number }
-) {
-  return new Promise((resolve) => {
-    const pythonProcess = spawn("python3", [
+  settings: any
+) => {
+  return new Promise((resolve, reject) => {
+    const process = spawn("python", [
       "scripts/send_dm.py",
       JSON.stringify(user),
       message,
@@ -65,42 +69,32 @@ async function handlePythonExecution(
       settings.dailyLimit.toString(),
     ]);
 
-    let output = "";
-    let errorOutput = "";
+    let outputData = "";
+    let errorData = "";
 
-    pythonProcess.stdout.on("data", (data) => {
-      output += data.toString();
-      console.log("Python出力:", data.toString());
+    process.stdout.on("data", (data) => {
+      outputData += data.toString();
     });
 
-    pythonProcess.stderr.on("data", (data) => {
-      errorOutput += data.toString();
-      console.error("Pythonエラー:", data.toString());
+    process.stderr.on("data", (data) => {
+      errorData += data.toString();
     });
 
-    pythonProcess.on("close", (code) => {
-      if (code === 0) {
-        resolve(
-          new Response(
-            JSON.stringify({
-              success: true,
-              output,
-            }),
-            { status: 200 }
-          )
-        );
-      } else {
-        resolve(
-          new Response(
-            JSON.stringify({
-              success: false,
-              error: errorOutput || "Python実行エラー",
-              code,
-            }),
-            { status: 500 }
-          )
-        );
+    process.on("close", (code) => {
+      try {
+        const result = JSON.parse(outputData);
+        resolve({
+          success: result.success,
+          error: result.error || errorData,
+          status: result.status,
+        });
+      } catch (e) {
+        resolve({
+          success: false,
+          error: errorData || "Failed to parse Python script output",
+          status: "error",
+        });
       }
     });
   });
-}
+};

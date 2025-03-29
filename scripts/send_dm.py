@@ -34,7 +34,7 @@ def format_message(message: str, user: User) -> str:
     """メッセージ内のプレースホルダーを置換する"""
     return message.replace("$${nick_name}", user.nickname)
 
-def send_dm(user: User, message: str, settings: SendSettings) -> Tuple[bool, str]:
+def send_dm(user: User, message: str, settings: SendSettings) -> Tuple[bool, str, str]:
     print("=== DM送信処理開始 ===")
     print(f"送信間隔設定: {settings.min_interval}秒 ～ {settings.max_interval}秒")
     print(f"1日の送信上限: {settings.daily_limit}回")
@@ -103,7 +103,7 @@ def send_dm(user: User, message: str, settings: SendSettings) -> Tuple[bool, str
             current_status = "followed"
         else:
             print(f"{user.userId} のフォローボタンが見つかりませんでした")
-            current_status = "error"
+            return False, "フォローボタンが見つかりませんでした", "error"
         
         if current_status == "followed":
             print("フォローに成功しました")
@@ -179,7 +179,7 @@ def send_dm(user: User, message: str, settings: SendSettings) -> Tuple[bool, str
                 if send_success:
                     print("メッセージを送信しました")
                     time.sleep(2)
-                    return True, ""
+                    return True, "", "success"
                 else:
                     raise Exception("送信ボタンが見つかりませんでした")
             else:
@@ -187,12 +187,12 @@ def send_dm(user: User, message: str, settings: SendSettings) -> Tuple[bool, str
             
         except Exception as e:
             print(f"処理中にエラーが発生: {str(e)}")
-            return False, str(e)
+            return False, str(e), "error"
 
     except Exception as error:
         error_message = str(error)
         print(f"エラーが発生しました: {error_message}")
-        return False, error_message
+        return False, error_message, "error"
 
     finally:
         if 'driver' in locals():
@@ -226,8 +226,18 @@ if __name__ == "__main__":
             daily_limit=daily_limit
         )
         
-        success, error = send_dm(user, message, settings)
+        success, error, status = send_dm(user, message, settings)
+        # 終了コードとステータスを標準出力に出力
+        print(json.dumps({
+            "success": success,
+            "error": error,
+            "status": status
+        }))
         sys.exit(0 if success else 1)
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(json.dumps({
+            "success": False,
+            "error": str(e),
+            "status": "error"
+        }))
         sys.exit(1)

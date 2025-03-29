@@ -3,7 +3,7 @@ export interface User {
   name: string;
   nickname: string;
   profile: string;
-  status: "pending" | "success" | "error" | "skipped";
+  status: "pending" | "followed" | "success" | "error";
   isSend: boolean;
 }
 

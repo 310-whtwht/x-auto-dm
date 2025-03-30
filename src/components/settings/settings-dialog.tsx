@@ -90,9 +90,9 @@ export function SettingsDialog({
     if (localSettings.dailyLimit < 1) {
       newErrors.push("1日の送信上限は1件以上で設定してください");
     }
-    if (localSettings.dailyLimit > 1000) {
+    if (localSettings.dailyLimit > 500) {
       // 安全のため上限を設定
-      newErrors.push("1日の送信上限は1000件以下で設定してください");
+      newErrors.push("1日の送信上限は500件以下で設定してください");
     }
 
     // メッセージのバリデーション（既存）
@@ -133,7 +133,7 @@ export function SettingsDialog({
   };
 
   const handleDailyLimitChange = (value: number) => {
-    if (value < 1 || value > 1000) {
+    if (value < 1 || value > 500) {
       return;
     }
 
@@ -309,14 +309,14 @@ export function SettingsDialog({
                 fullWidth
                 type="number"
                 label="1日の送信上限(件)"
-                inputProps={{ min: 1, max: 1000 }}
+                inputProps={{ min: 1, max: 500 }}
                 value={localSettings.dailyLimit}
                 onChange={(e) => handleDailyLimitChange(Number(e.target.value))}
                 error={
                   localSettings.dailyLimit < 1 ||
-                  localSettings.dailyLimit > 1000
+                  localSettings.dailyLimit > 500
                 }
-                helperText="1件から1000件の間で設定してください"
+                helperText="1件から500件の間で設定してください"
               />
             </Grid>
             <Grid item xs={12}>
@@ -333,6 +333,9 @@ export function SettingsDialog({
                   を使用してください。
                   <br />
                   例：「${"${nick_name}"}さん、はじめまして！」
+                </Typography>
+                <Typography variant="body2" color="error" sx={{ mb: 1 }}>
+                  ⚠️絵文字・特殊文字は使用できません。
                 </Typography>
               </Box>
               <Box

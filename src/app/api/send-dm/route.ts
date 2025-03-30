@@ -6,6 +6,7 @@ import { User } from "@/types";
 export async function POST(request: Request) {
   try {
     const { user, message, settings } = await request.json();
+    const signal = request.signal; // AbortSignalを取得
 
     console.log("リクエスト受信:", { user, message, settings });
 
@@ -37,10 +38,16 @@ export async function POST(request: Request) {
       limit: settings.dailyLimit,
     });
 
-    const result = await handlePythonExecution(user, message, settings);
+    const result = await handlePythonExecution(user, message, settings, signal);
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return NextResponse.json(
+        { success: false, error: "処理が中断されました", status: "error" },
+        { status: 499 } // Client Closed Request
+      );
+    }
     console.error("APIエラー:", error);
     return NextResponse.json(
       {
@@ -57,7 +64,8 @@ export async function POST(request: Request) {
 const handlePythonExecution = async (
   user: User,
   message: string,
-  settings: any
+  settings: any,
+  signal?: AbortSignal
 ) => {
   return new Promise((resolve, reject) => {
     const process = spawn("python", [
@@ -109,5 +117,12 @@ const handlePythonExecution = async (
         });
       }
     });
+
+    if (signal) {
+      signal.addEventListener("abort", () => {
+        process.kill();
+        reject(new Error("Operation cancelled"));
+      });
+    }
   });
 };

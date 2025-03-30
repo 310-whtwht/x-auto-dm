@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { DataTable } from "@/components/ui/data-table";
@@ -10,8 +10,6 @@ import { getRandomMessage, getRandomInterval, sleep } from "@/lib/utils";
 import {
   Box,
   Button,
-  TextField,
-  Stack,
   Grid,
   Paper,
   Typography,
@@ -30,21 +28,23 @@ import {
   Download as DownloadIcon,
   Send as SendIcon,
   Launch as LaunchIcon,
+  Stop as StopIcon,
 } from '@mui/icons-material';
 import React from "react";
-import { sendDM } from "@/lib/scraper";
 
 export default function Home() {
   const { settings, updateSettings, resetSettings } = useSettings();
   const { users, stats, updateUser, addUsers, clearAllUsers } = useUsers();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [shouldStop, setShouldStop] = useState(false);
   const [searchMode, setSearchMode] = useState<"exact" | "partial">("exact");
   const [keywords, setKeywords] = useState<string[]>([]);
   const [logs, setLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const addLogs = (newLogs: string[]) => {
     setLogs((prev) => [...prev, ...newLogs]);
@@ -84,6 +84,15 @@ export default function Home() {
     }
   };
 
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsSending(false);
+      setLogs(prev => [...prev, "送信処理を強制停止しました"]);
+    }
+  };
+
   const handleSend = async () => {
     try {
       if (!settings.messages || settings.messages.length === 0) {
@@ -91,12 +100,13 @@ export default function Home() {
         return;
       }
 
-      const targetUsers = users.filter(user => 
-        user.isSend &&
-        (user.status === "followed" || user.status === "error" || user.status === "pending")
-      );
+      const targetUserIds = users
+        .filter(user => user.isSend && 
+          (user.status === "followed" || user.status === "error" || user.status === "pending")
+        )
+        .map(user => user.userId);
       
-      if (targetUsers.length === 0) {
+      if (targetUserIds.length === 0) {
         setLogs(prev => [...prev, "送信対象のユーザーが選択されていません"]);
         return;
       }
@@ -104,12 +114,14 @@ export default function Home() {
       setIsSending(true);
       setLogs(prev => [...prev, "DM送信処理を開始します"]);
 
-      for (const user of targetUsers) {
+      abortControllerRef.current = new AbortController();
+
+      for (const userId of targetUserIds) {
         try {
-          if (user.status === "pending") {
-            await updateUser(user.userId, { status: "pending" });
-          }
-          setLogs(prev => [...prev, `${user.userId} へのDM送信を開始...`]);
+          const currentUser = users.find(u => u.userId === userId);
+          if (!currentUser) continue;
+
+          setLogs(prev => [...prev, `${userId} へのDM送信を開始...`]);
 
           const messageTemplate = settings.messages[
             Math.floor(Math.random() * settings.messages.length)
@@ -121,7 +133,7 @@ export default function Home() {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              user,
+              user: currentUser,
               message: messageTemplate,
               settings: {
                 interval: {
@@ -132,34 +144,49 @@ export default function Home() {
                 followBeforeDM: settings.followBeforeDM
               }
             }),
+            signal: abortControllerRef.current.signal
           });
 
           const data = await response.json();
           
           if (data.success) {
-            setLogs(prev => [...prev, `${user.userId} へのDM送信が成功しました`]);
-            await updateUser(user.userId, { status: data.status });
+            setLogs(prev => [...prev, `${userId} へのDM送信が成功しました`]);
+            await updateUser(userId, { status: data.status });
           } else {
             throw new Error(data.error || "DM送信に失敗しました");
           }
 
-          // 連続送信による制限を避けるため、少し待機
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(resolve, 2000);
+            abortControllerRef.current?.signal.addEventListener('abort', () => {
+              clearTimeout(timeoutId);
+              reject(new Error('Operation cancelled'));
+            });
+          });
 
         } catch (error: unknown) {
-          console.error(`Failed to send DM to ${user.userId}:`, error);
+          if (error instanceof Error && error.name === 'AbortError') {
+            throw error;
+          }
+          
+          console.error(`Failed to send DM to ${userId}:`, error);
           const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
-          setLogs(prev => [...prev, `${user.userId} へのDM送信が失敗: ${errorMessage}`]);
-          await updateUser(user.userId, { status: "error" });
+          setLogs(prev => [...prev, `${userId} へのDM送信が失敗: ${errorMessage}`]);
+          await updateUser(userId, { status: "error" });
         }
       }
 
     } catch (error: unknown) {
-      console.error("DM送信プロセス全体でエラーが発生:", error);
-      const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
-      setLogs(prev => [...prev, `DM送信処理でエラーが発生: ${errorMessage}`]);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log("送信処理が停止されました");
+      } else {
+        console.error("DM送信プロセス全体でエラーが発生:", error);
+        const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
+        setLogs(prev => [...prev, `DM送信処理でエラーが発生: ${errorMessage}`]);
+      }
     } finally {
       setIsSending(false);
+      abortControllerRef.current = null;
       setLogs(prev => [...prev, "DM送信処理が完了しました"]);
     }
   };
@@ -216,12 +243,10 @@ export default function Home() {
 
   const handleImportClick = () => {
     if (users.length > 0) {
-      // 既存のデータがある場合は確認ダイアログを表示
       if (confirm("既存のデータは全て削除されます。CSVをインポートしますか？")) {
         fileInputRef.current?.click();
       }
     } else {
-      // データがない場合は直接ファイル選択を開く
       fileInputRef.current?.click();
     }
   };
@@ -342,12 +367,12 @@ export default function Home() {
             </Button>
             <Button
               variant="contained"
-              color="success"
-              startIcon={<SendIcon />}
-              onClick={handleSend}
-              disabled={isLoading || users.length === 0 || isSending}
+              color={isSending ? "error" : "success"}
+              startIcon={isSending ? <StopIcon /> : <SendIcon />}
+              onClick={isSending ? handleStop : handleSend}
+              disabled={isLoading || users.length === 0}
             >
-              {isSending ? "送信中..." : "送信"}
+              {isSending ? "停止" : "送信"}
             </Button>
           </Box>
         </Box>
@@ -397,7 +422,7 @@ export default function Home() {
                 </ListItem>
                 <Divider />
                 <ListItem>
-                  <Typography>スキップ: {stats.skipped}</Typography>
+                  <Typography>フォロー済: {stats.followed}</Typography>
                 </ListItem>
               </List>
             </Paper>

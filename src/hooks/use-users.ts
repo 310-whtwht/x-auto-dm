@@ -7,7 +7,7 @@ const DEFAULT_STATS: Stats = {
   total: 0,
   success: 0,
   error: 0,
-  skipped: 0,
+  followed: 0,
 };
 
 export function useUsers() {
@@ -15,19 +15,10 @@ export function useUsers() {
   const [stats, setStats] = useState<Stats>(DEFAULT_STATS);
 
   useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const savedUsers = localStorage.getItem("users");
-        if (savedUsers) {
-          const loadedUsers = JSON.parse(savedUsers);
-          setUsers(loadedUsers);
-          updateStats(loadedUsers);
-        }
-      } catch (error) {
-        console.error("Failed to load users:", error);
-      }
-    };
-    loadUsers();
+    const saved = localStorage.getItem("users");
+    if (saved) {
+      setUsers(JSON.parse(saved));
+    }
   }, []);
 
   const updateStats = (currentUsers: User[]) => {
@@ -36,7 +27,7 @@ export function useUsers() {
         acc.total++;
         if (user.status === "success") acc.success++;
         else if (user.status === "error") acc.error++;
-        else if (user.status === "skipped") acc.skipped++;
+        else if (user.status === "followed") acc.followed++;
         return acc;
       },
       { ...DEFAULT_STATS }
@@ -45,16 +36,13 @@ export function useUsers() {
   };
 
   const updateUser = async (userId: string, updates: Partial<User>) => {
-    const updatedUsers = users.map((user) =>
-      user.userId === userId ? { ...user, ...updates } : user
-    );
-    try {
-      localStorage.setItem("users", JSON.stringify(updatedUsers));
-      setUsers(updatedUsers);
-      updateStats(updatedUsers);
-    } catch (error) {
-      console.error("Failed to update user:", error);
-    }
+    setUsers((prevUsers) => {
+      const newUsers = prevUsers.map((user) =>
+        user.userId === userId ? { ...user, ...updates } : user
+      );
+      localStorage.setItem("users", JSON.stringify(newUsers));
+      return newUsers;
+    });
   };
 
   const addUsers = async (newUsers: User[]) => {

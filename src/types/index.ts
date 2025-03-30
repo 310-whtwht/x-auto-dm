@@ -25,5 +25,5 @@ export interface Stats {
   total: number;
   success: number;
   error: number;
-  skipped: number;
+  followed: number;
 }

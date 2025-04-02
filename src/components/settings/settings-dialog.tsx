@@ -227,7 +227,7 @@ export function SettingsDialog({
                 variant="subtitle1"
                 sx={{ mb: 2, fontWeight: "bold" }}
               >
-                フォロワー情報
+                抽出設定
               </Typography>
               <TextField
                 fullWidth
@@ -245,6 +245,12 @@ export function SettingsDialog({
             </Grid>
 
             <Grid item xs={6}>
+            <Typography
+                variant="subtitle1"
+                sx={{ mb: 2, fontWeight: "bold" }}
+              >
+                送信設定
+              </Typography>
               <TextField
                 fullWidth
                 type="number"
@@ -297,6 +303,11 @@ export function SettingsDialog({
                 helperText="1件から500件の間で設定してください"
               />
             </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }} />
+            </Grid>
+
             <Grid item xs={12}>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>

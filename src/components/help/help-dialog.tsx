@@ -79,6 +79,10 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
             borderRadius: 1
           }}>
             ※ステータスがpending、followed、errorのアカウントが送信対象となります。
+            <br />
+            ※ニックネームはtable上から手動メンテできます。
+            <br />
+            ※CSVはご自身で作成・メンテしたものもインポート可能です。
           </Typography>
         </Box>
       </DialogContent>

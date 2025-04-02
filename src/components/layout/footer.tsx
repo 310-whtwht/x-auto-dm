@@ -15,7 +15,7 @@ export function Footer() {
     >
       <Container>
         <Typography variant="body2" align="center">
-          &copy; 2025 Xedge X Auto DM
+          &copy; 2025 X Auto DM
         </Typography>
       </Container>
     </Box>

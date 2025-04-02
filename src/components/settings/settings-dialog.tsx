@@ -221,27 +221,6 @@ export function SettingsDialog({
           )}
 
           <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Alert severity="info" sx={{ mb: 3 }}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ fontWeight: "bold", mb: 1 }}
-                >
-                  X(Twitter)へのログイン手順：
-                </Typography>
-                <Typography variant="body2">
-                  1.
-                  ホーム画面の「Chrome起動」ボタンをクリックしてブラウザを起動
-                </Typography>
-                <Typography variant="body2">
-                  2. 起動したブラウザでX(Twitter)に手動でログインしてください
-                </Typography>
-                <Typography variant="body2">
-                  3.
-                  ログイン後、下記のフォロワーURLを設定して情報取得が可能になります
-                </Typography>
-              </Alert>
-            </Grid>
 
             <Grid item xs={12}>
               <Typography
@@ -313,8 +292,7 @@ export function SettingsDialog({
                 value={localSettings.dailyLimit}
                 onChange={(e) => handleDailyLimitChange(Number(e.target.value))}
                 error={
-                  localSettings.dailyLimit < 1 ||
-                  localSettings.dailyLimit > 500
+                  localSettings.dailyLimit < 1 || localSettings.dailyLimit > 500
                 }
                 helperText="1件から500件の間で設定してください"
               />

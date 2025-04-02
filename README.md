@@ -1,11 +1,138 @@
-# My Auto DM App
+# X Send DM
 
-This is an auto DM application built with Next.js, using shadcn UI for the frontend and Puppeteer for backend scraping and DM sending.
+TwitterのDMを自動送信するためのツールです。
 
-## Features
-- ユーザー抽出機能（完全一致or部分一致）
-- ホーム画面に抽出結果をdatagridで表示
-- DM送信設定画面（ログイン情報、送信間隔、上限、DMメッセージ設定等）
-- DM送信処理（プロフィールページを開いてDMボタン操作）
-- デバッグ機能（ダミーレコード追加）
-# x-auto-dm
+## 必要要件
+
+- Node.js (v18以上)
+- Python (v3.8以上)
+- Google Chrome
+
+## セットアップ手順
+
+1. リポジトリのクローン
+```bash
+git clone https://github.com/your-username/x-send-dm.git
+cd x-send-dm
+```
+
+2. Node.jsパッケージのインストール
+```bash
+npm install
+```
+
+3. Pythonパッケージのインストール
+```bash
+pip install selenium
+```
+
+4. 環境変数の設定
+`.env.local`ファイルをプロジェクトのルートディレクトリに作成し、以下の内容を追加：
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
+```
+
+5. アプリケーションの起動
+```bash
+npm run dev
+```
+
+ブラウザで http://localhost:3000 にアクセスしてください。
+
+## 使用方法
+
+### ①X(Twitter)へのログイン手順
+
+1. ホーム画面の「Chrome起動」ボタンをクリックしてブラウザを起動
+2. 起動したブラウザでX(Twitter)に手動でログインしてください
+
+### ②ユーザー抽出手順
+
+1. 設定画面で、フォロワーURLを設定
+2. ホーム画面の「抽出」ボタンをクリックすると抽出処理が開始します
+3. 抽出処理が終わるとデスクトップ画面にcsvファイルとして吐き出されます
+
+### ③DM処理手順
+
+1. ホーム画面の「CSVインポート」ボタンを押して、②で作成されたcsvファイルを取り込みます
+2. 「送信ボタン」を押すと送信処理が開始します
+
+※ステータスがpending、followed、errorのアカウントが送信対象となります。
+
+## 設定項目
+
+### 基本設定
+- フォロワーURL: 抽出対象とするTwitterのフォロワーページのURL
+- メッセージテンプレート: 送信するDMのテンプレート（複数設定可能）
+- 送信間隔: DMを送信する間隔（秒）
+- 1日の送信上限: 24時間あたりの最大送信数
+- DM送信前にフォロー: 送信前に自動フォローを行うかどうか
+
+## トラブルシューティング
+
+### Chrome起動時のエラー
+- Chromeが既に起動している場合は、すべてのChromeウィンドウを完全に終了してから再試行してください
+- デバッグポート(9222)が既に使用されている場合は、PCを再起動してください
+
+### DM送信エラー
+- X(Twitter)にログインしていることを確認してください
+- 送信間隔が短すぎる場合は、設定画面で間隔を長くしてください
+- 1日の送信上限に達している場合は、24時間待つ必要があります
+
+## 注意事項
+
+- このツールは自己責任で使用してください
+- Twitterの利用規約に違反する使用方法は避けてください
+- 大量のDM送信はアカウントの制限対象となる可能性があります
+
+## ライセンス
+
+MIT License
+
+## 開発者向け情報
+
+### 使用技術
+- Next.js 14
+- TypeScript
+- Material-UI
+- Python (Selenium)
+
+### プロジェクト構造
+
+```
+x-send-dm/
+├── src/
+│ ├── app/ # Next.jsページコンポーネント
+│ ├── components/ # 共通コンポーネント
+│ ├── contexts/ # Reactコンテキスト
+│ ├── hooks/ # カスタムフック
+│ ├── lib/ # ユーティリティ関数
+│ └── types/ # 型定義
+├── scripts/ # Pythonスクリプト
+├── public/ # 静的ファイル
+└── package.json # 依存関係の定義
+```
+
+
+### ビルド方法
+```bash
+# 開発ビルド
+npm run dev
+
+# プロダクションビルド
+npm run build
+npm start
+```
+```
+
+このREADMEには以下の内容が含まれています：
+
+1. プロジェクトの概要
+2. 必要要件
+3. セットアップ手順
+4. 使用方法
+5. 設定項目の説明
+6. トラブルシューティング
+7. 注意事項
+8. ライセンス情報
+9. 開発者向け情報

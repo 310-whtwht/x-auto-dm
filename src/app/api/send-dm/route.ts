@@ -5,12 +5,17 @@ import { User } from "@/types";
 
 export async function POST(request: Request) {
   try {
-    const { user, message, settings } = await request.json();
+    const { user, message, settings, currentSendCount } = await request.json();
     const signal = request.signal; // AbortSignalを取得
 
-    console.log("リクエスト受信:", { user, message, settings });
+    console.log("リクエスト受信:", {
+      user,
+      message,
+      settings,
+      currentSendCount,
+    });
 
-    if (!user || !message || !settings) {
+    if (!user || !message || !settings || currentSendCount === undefined) {
       return NextResponse.json(
         {
           success: false,
@@ -21,24 +26,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const { interval, dailyLimit } = settings;
-    const args = [
-      JSON.stringify(user),
-      message,
-      interval.min.toString(),
-      interval.max.toString(),
-      dailyLimit.toString(),
-    ];
+    // 送信上限チェック
+    if (currentSendCount >= settings.dailyLimit) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `1日の送信上限(${settings.dailyLimit}件)に達しています`,
+          status: "error",
+        },
+        { status: 400 }
+      );
+    }
 
-    console.log("Python実行パラメータ:", {
-      user: JSON.stringify(user),
-      message,
-      min: settings.interval.min,
-      max: settings.interval.max,
-      limit: settings.dailyLimit,
-    });
+    // settingsオブジェクトにcurrentSendCountを追加
+    const settingsWithCount = {
+      ...settings,
+      currentSendCount
+    };
 
-    const result = await handlePythonExecution(user, message, settings, signal);
+    const result = await handlePythonExecution(user, message, settingsWithCount, signal);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -68,6 +74,17 @@ const handlePythonExecution = async (
   signal?: AbortSignal
 ) => {
   return new Promise((resolve, reject) => {
+    // Python実行時のパラメータをログ出力
+    console.log("Python実行パラメータ:", {
+      user: JSON.stringify(user),
+      message,
+      min: settings.interval.min,
+      max: settings.interval.max,
+      limit: settings.dailyLimit,
+      followBeforeDM: settings.followBeforeDM,
+      currentSendCount: settings.currentSendCount
+    });
+
     const process = spawn("python", [
       "scripts/send_dm.py",
       JSON.stringify(user),
@@ -75,6 +92,8 @@ const handlePythonExecution = async (
       settings.interval.min.toString(),
       settings.interval.max.toString(),
       settings.dailyLimit.toString(),
+      settings.followBeforeDM.toString(),
+      settings.currentSendCount.toString()
     ]);
 
     let outputData = "";

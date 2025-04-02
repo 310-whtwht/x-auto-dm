@@ -100,28 +100,58 @@ export default function Home() {
         return;
       }
 
+      // 1日の送信数カウントを取得・初期化
+      const today = new Date().toDateString();
+      const savedDate = localStorage.getItem('lastSendDate');
+      
+      // 日付が変わっていたらリセット
+      if (savedDate !== today) {
+        localStorage.setItem('lastSendDate', today);
+        localStorage.setItem('dailySendCount', '0');
+      }
+      
+      let dailySendCount = parseInt(localStorage.getItem('dailySendCount') || '0');
+
+      // 送信上限に達している場合は処理を中止
+      if (dailySendCount >= settings.dailyLimit) {
+        setLogs(prev => [...prev, `1日の送信上限(${settings.dailyLimit}件)に達しています`]);
+        return;
+      }
+
+      // 残り送信可能数を計算
+      const remainingLimit = settings.dailyLimit - dailySendCount;
+      
       const targetUserIds = users
-        .filter(user => user.isSend && 
+        .filter(user => 
+          user.isSend &&
           (user.status === "followed" || user.status === "error" || user.status === "pending")
         )
+        .slice(0, remainingLimit)
         .map(user => user.userId);
-      
+
       if (targetUserIds.length === 0) {
         setLogs(prev => [...prev, "送信対象のユーザーが選択されていません"]);
         return;
       }
 
       setIsSending(true);
-      setLogs(prev => [...prev, "DM送信処理を開始します"]);
-
+      setLogs(prev => [
+        ...prev, 
+        "DM送信処理を開始します",
+        `残り送信可能数: ${remainingLimit}件`
+      ]);
       abortControllerRef.current = new AbortController();
 
       for (const userId of targetUserIds) {
         try {
+          // 送信上限の再チェック
+          if (dailySendCount >= settings.dailyLimit) {
+            setLogs(prev => [...prev, `1日の送信上限(${settings.dailyLimit}件)に達しました`]);
+            break;
+          }
+
           const currentUser = users.find(u => u.userId === userId);
           if (!currentUser) continue;
-
-          setLogs(prev => [...prev, `${userId} へのDM送信を開始...`]);
 
           const messageTemplate = settings.messages[
             Math.floor(Math.random() * settings.messages.length)
@@ -142,7 +172,8 @@ export default function Home() {
                 },
                 dailyLimit: settings.dailyLimit,
                 followBeforeDM: settings.followBeforeDM
-              }
+              },
+              currentSendCount: dailySendCount
             }),
             signal: abortControllerRef.current.signal
           });
@@ -150,19 +181,21 @@ export default function Home() {
           const data = await response.json();
           
           if (data.success) {
-            setLogs(prev => [...prev, `${userId} へのDM送信が成功しました`]);
+            dailySendCount++;
+            localStorage.setItem('dailySendCount', dailySendCount.toString());
+            setLogs(prev => [
+              ...prev, 
+              `${userId} へのDM送信が成功しました`,
+              `残り送信可能数: ${settings.dailyLimit - dailySendCount}件`
+            ]);
             await updateUser(userId, { status: data.status });
           } else {
-            throw new Error(data.error || "DM送信に失敗しました");
+            // throw new Error(data.error || "DM送信に失敗しました");
+            setLogs(prev => [...prev, `${userId}: ${data.error}`]);
+            await updateUser(userId, { status: data.status });
           }
 
-          await new Promise((resolve, reject) => {
-            const timeoutId = setTimeout(resolve, 2000);
-            abortControllerRef.current?.signal.addEventListener('abort', () => {
-              clearTimeout(timeoutId);
-              reject(new Error('Operation cancelled'));
-            });
-          });
+          await new Promise(resolve => setTimeout(resolve, 2000));
 
         } catch (error: unknown) {
           if (error instanceof Error && error.name === 'AbortError') {
@@ -186,8 +219,12 @@ export default function Home() {
       }
     } finally {
       setIsSending(false);
-      abortControllerRef.current = null;
-      setLogs(prev => [...prev, "DM送信処理が完了しました"]);
+      const currentCount = parseInt(localStorage.getItem('dailySendCount') || '0');
+      setLogs(prev => [
+        ...prev, 
+        "DM送信処理が完了しました",
+        `本日の送信数: ${currentCount}/${settings.dailyLimit}件`
+      ]);
     }
   };
 

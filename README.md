@@ -26,13 +26,7 @@ npm install
 pip install selenium
 ```
 
-4. 環境変数の設定
-`.env.local`ファイルをプロジェクトのルートディレクトリに作成し、以下の内容を追加：
-```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
-```
-
-5. アプリケーションの起動
+4. アプリケーションの起動
 ```bash
 npm run dev
 ```

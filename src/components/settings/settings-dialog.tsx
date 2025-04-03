@@ -255,7 +255,11 @@ export function SettingsDialog({
                 fullWidth
                 type="number"
                 label="送信間隔（最小）(秒)"
-                inputProps={{ min: 5, max: 7200 }}
+                inputProps={{ 
+                  min: 5, 
+                  max: 7200,
+                  step: "1"
+                }}
                 value={localSettings.interval.min}
                 onChange={(e) =>
                   handleIntervalChange("min", Number(e.target.value))
@@ -272,7 +276,11 @@ export function SettingsDialog({
                 fullWidth
                 type="number"
                 label="送信間隔（最大）(秒)"
-                inputProps={{ min: 5, max: 7200 }}
+                inputProps={{ 
+                  min: 5, 
+                  max: 7200,
+                  step: "1"
+                }}
                 value={localSettings.interval.max}
                 onChange={(e) =>
                   handleIntervalChange("max", Number(e.target.value))

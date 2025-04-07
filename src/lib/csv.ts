@@ -1,5 +1,6 @@
 import { User } from "@/types";
 import Papa from "papaparse";
+import dayjs from "dayjs";
 
 export const exportToCsv = (users: User[]) => {
   // localStorageから最新のユーザーデータを取得
@@ -26,10 +27,7 @@ export const exportToCsv = (users: User[]) => {
   const url = URL.createObjectURL(blob);
 
   link.setAttribute("href", url);
-  link.setAttribute(
-    "download",
-    `dm_users_${new Date().toISOString().split("T")[0]}.csv`
-  );
+  link.setAttribute("download", `dm_users_${dayjs().format("YYYY-MM-DD")}.csv`);
   link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();

@@ -25,6 +25,7 @@
     "clsx": "^2.1.0",
     "csv-parse": "^5.6.0",
     "csv-stringify": "^6.5.2",
+    "dayjs": "^1.11.13",
     "fs-extra": "^11.3.0",
     "idb": "^8.0.0",
     "lucide-react": "^0.344.0",

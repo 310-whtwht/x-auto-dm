@@ -2,7 +2,12 @@ import { User } from "@/types";
 import Papa from "papaparse";
 
 export const exportToCsv = (users: User[]) => {
-  const data = users.map((user) => ({
+  // localStorageから最新のユーザーデータを取得
+  const savedUsers = localStorage.getItem("users");
+  console.log("savedUsers", savedUsers);
+  const latestUsers: User[] = savedUsers ? JSON.parse(savedUsers) : users;
+
+  const data = latestUsers.map((user: User) => ({
     userId: user.userId,
     name: user.name,
     nickname: user.nickname,

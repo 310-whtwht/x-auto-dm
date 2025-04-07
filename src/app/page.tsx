@@ -31,6 +31,7 @@ import {
   Stop as StopIcon,
 } from '@mui/icons-material';
 import React from "react";
+import { importFromCsv } from "@/lib/csv";
 
 export default function Home() {
   const { settings, updateSettings, resetSettings } = useSettings();
@@ -295,27 +296,14 @@ export default function Home() {
     try {
       await clearAllUsers();
       
-      const text = await file.text();
-      const rows = text.split('\n').map(row => row.split(','));
-      const headers = rows[0];
-      
-      const users: User[] = rows.slice(1).map((row, index) => {
-        const [name, userId, nickname, profile] = row.map(field => 
-          field.replace(/^"(.*)"$/, '$1').replace(/""/g, '"')
-        );
-        
-        return {
-          userId: userId || `imported-${index}`,
-          name: name || '',
-          nickname: nickname || name?.split(/[(@（｜]/, 1)[0] || '',
-          profile: profile || '',
-          status: "pending" as const,
-          isSend: true
-        };
-      }).filter(user => user.name);
-
+      const users = await importFromCsv(file);
       addUsers(users);
-      setLogs(prev => [...prev, "既存のデータを削除しました", `${users.length}件のユーザーを読み込みました`]);
+      
+      setLogs(prev => [
+        ...prev, 
+        "既存のデータを削除しました",
+        `${users.length}件のユーザーを読み込みました`
+      ]);
     } catch (error) {
       console.error('CSVインポートエラー:', error);
       setLogs(prev => [...prev, 'CSVの読み込みに失敗しました']);

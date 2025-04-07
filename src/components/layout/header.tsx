@@ -8,16 +8,29 @@ import {
   Box,
   IconButton,
   Tooltip,
+  Button,
 } from "@mui/material";
 import {
   Email as EmailIcon,
   Refresh as RefreshIcon,
   Help as HelpIcon,
+  FileDownload as FileDownloadIcon,
 } from "@mui/icons-material";
 import { HelpDialog } from "@/components/help/help-dialog";
+import { exportToCsv } from "@/lib/csv";
+import { useUsers } from "@/hooks/use-users";
 
 export function Header() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const { users } = useUsers();
+
+  const handleExport = () => {
+    if (users.length === 0) {
+      alert("エクスポートするデータがありません");
+      return;
+    }
+    exportToCsv(users);
+  };
 
   const handleRefresh = () => {
     window.location.reload();
@@ -46,6 +59,13 @@ export function Header() {
               aria-label="ヘルプ"
             >
               <HelpIcon />
+            </IconButton>
+            <IconButton
+              color="inherit"
+              onClick={handleExport}
+              aria-label="エクスポート"
+            >
+              <FileDownloadIcon />
             </IconButton>
             <Tooltip title="リロード">
               <IconButton color="inherit" onClick={handleRefresh} size="large">

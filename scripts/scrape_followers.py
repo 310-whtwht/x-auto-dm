@@ -101,11 +101,16 @@ def main():
             desktop_path = os.path.join(os.path.expanduser("~"), "Desktop", filename)
 
             with open(desktop_path, "w", newline="", encoding="utf-8") as csvfile:
-                fieldnames = ["username", "id", "nickname", "profile"]
+                fieldnames = ["userId", "name", "nickname", "profile"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 for follower in followers_data:
-                    writer.writerow(follower)
+                    writer.writerow({
+                        "userId": follower["id"],
+                        "name": follower["username"],
+                        "nickname": follower["nickname"],
+                        "profile": follower["profile"]
+                    })
 
             print(f"CSV saved to: {desktop_path}")
             print(f"Total followers found: {len(followers_data)}")

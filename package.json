@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "electron:dev": "NODE_ENV=development electron .",
+    "electron:dev": "npm run dev & sleep 5 && NODE_ENV=development electron .",
     "electron:build": "npm run build && electron-builder",
     "postinstall": "electron-builder install-app-deps",
     "lint": "next lint"

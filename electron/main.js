@@ -2,6 +2,12 @@ const { app, BrowserWindow } = require("electron");
 const path = require("path");
 const isDev = process.env.NODE_ENV === "development";
 
+// GPUアクセラレーションを無効化
+app.disableHardwareAcceleration();
+
+// 開発者ツールの警告を無視
+process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = true;
+
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -13,6 +19,14 @@ function createWindow() {
       webSecurity: true,
       allowRunningInsecureContent: false,
     },
+    // ウィンドウオプションを追加
+    show: false,
+    backgroundColor: "#ffffff",
+  });
+
+  // ウィンドウの読み込みが完了したら表示
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.show();
   });
 
   if (isDev) {
@@ -23,6 +37,20 @@ function createWindow() {
     // 本番環境ではビルドされたファイルを読み込む
     mainWindow.loadFile(path.join(__dirname, "../out/index.html"));
   }
+
+  // エラーハンドリング
+  mainWindow.webContents.on(
+    "did-fail-load",
+    (event, errorCode, errorDescription) => {
+      console.error("Page failed to load:", errorCode, errorDescription);
+      if (isDev) {
+        console.log("Retrying connection to dev server...");
+        setTimeout(() => {
+          mainWindow.loadURL("http://localhost:3000");
+        }, 1000);
+      }
+    }
+  );
 }
 
 app.whenReady().then(() => {

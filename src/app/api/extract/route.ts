@@ -2,7 +2,7 @@ import { exec } from "child_process";
 import { NextResponse } from "next/server";
 import path from "path";
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<Response> {
   try {
     const { url } = await request.json();
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     console.log("Script path:", scriptPath);
     console.log("Target username:", targetUsername);
 
-    return new Promise((resolve) => {
+    return new Promise<Response>((resolve) => {
       // Pythonスクリプトを実行
       const pythonProcess = exec(
         `python3 "${scriptPath}" "${targetUsername}"`,

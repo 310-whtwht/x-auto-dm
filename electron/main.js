@@ -34,7 +34,7 @@ function createWindow() {
     mainWindow.loadURL("http://localhost:3000");
     mainWindow.webContents.openDevTools();
   } else {
-    // 本番環境ではビルドされたファイルを読み込む
+    // 本番環境では相対パスを使用
     mainWindow.loadFile(path.join(__dirname, "../out/index.html"));
   }
 
@@ -46,7 +46,7 @@ function createWindow() {
       if (isDev) {
         console.log("Retrying connection to dev server...");
         setTimeout(() => {
-          mainWindow.loadURL("http://localhost:");
+          mainWindow.loadURL("http://localhost:3000");
         }, 1000);
       }
     }

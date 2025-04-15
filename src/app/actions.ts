@@ -17,26 +17,36 @@ interface ExtractResponse {
   logs: string[];
 }
 
+interface LaunchChromeResponse {
+  success: boolean;
+  error?: string;
+}
+
 const execPromise = util.promisify(exec);
 
-export async function launchChromeWithDebugger() {
+export async function handleLaunchChrome(): Promise<{ success: boolean; error?: string }> {
   try {
-    // Macの場合のChromeパス
-    const chromePath = '/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome';
-    const command = `${chromePath} --remote-debugging-port=9222`;
+    const baseUrl = process.env.NODE_ENV === "development" 
+      ? "http://localhost:3000" 
+      : "http://localhost:3000"; // 本番環境でもlocalhostを使用
     
-    const { stdout, stderr } = await execPromise(command);
-    console.log('Chrome launched successfully');
-    console.log('stdout:', stdout);
-    
-    if (stderr) {
-      console.error('stderr:', stderr);
+    const response = await fetch(`${baseUrl}/api/launch-chrome`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
-    return true;
+
+    const data = await response.json();
+    console.log("Chrome起動結果:", data);
+    return data as { success: boolean; error?: string };
   } catch (error) {
-    console.error('Error launching Chrome:', error);
-    return false;
+    console.error("Chrome起動エラー:", error);
+    throw error;
   }
 }
 

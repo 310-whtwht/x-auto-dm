@@ -5,7 +5,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { DataTable } from "@/components/ui/data-table";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
-import { extractUsers, launchChromeWithDebugger } from "./actions";
+import { extractUsers, handleLaunchChrome } from "./actions";
 import { getRandomMessage, getRandomInterval, sleep } from "@/lib/utils";
 import {
   Box,
@@ -312,16 +312,13 @@ export default function Home() {
     event.target.value = '';
   };
 
-  const handleLaunchChrome = async () => {
+  const launchChromeHandler = async () => {
     try {
-      const response = await fetch("/api/launch-chrome", {
-        method: "POST",
-      });
-      const data = await response.json();
-      if (data.success) {
+      const result = await handleLaunchChrome();
+      if (result.success) {
         setLogs(prev => [...prev, "Chromeの起動に成功しました"]);
       } else {
-        setLogs(prev => [...prev, "Chromeの起動に失敗しました"]);
+        setLogs(prev => [...prev, `Chromeの起動に失敗しました: ${result.error}`]);
       }
     } catch (error) {
       console.error('Failed to launch Chrome:', error);
@@ -367,7 +364,7 @@ export default function Home() {
               variant="outlined"
               color="primary"
               startIcon={<LaunchIcon />}
-              onClick={handleLaunchChrome}
+              onClick={launchChromeHandler}
               size="small"
             >
               Chrome起動

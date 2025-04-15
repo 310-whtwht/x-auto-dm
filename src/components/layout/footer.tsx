@@ -5,12 +5,12 @@ export function Footer() {
     <Box
       component="footer"
       sx={{
-        mt: "auto",
-        py: 3,
+        py: 2,
         bgcolor: "#333",
         color: "white",
         borderTop: 1,
         borderColor: "divider",
+        marginTop: "60px", // クリア/デバッグボタンの高さ分のマージン
       }}
     >
       <Container>

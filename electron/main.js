@@ -46,7 +46,7 @@ function createWindow() {
       if (isDev) {
         console.log("Retrying connection to dev server...");
         setTimeout(() => {
-          mainWindow.loadURL("http://localhost:3000");
+          mainWindow.loadURL("http://localhost:");
         }, 1000);
       }
     }

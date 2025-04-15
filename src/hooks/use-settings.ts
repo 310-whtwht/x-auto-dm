@@ -24,7 +24,7 @@ export function useUsers() {
     total: 0,
     success: 0,
     error: 0,
-    skipped: 0,
+    followed: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,10 +71,10 @@ export function useUsers() {
       (acc, user) => {
         if (user.status === "success") acc.success++;
         else if (user.status === "error") acc.error++;
-        else if (user.status === "skipped") acc.skipped++;
+        else if (user.status === "followed") acc.followed++;
         return acc;
       },
-      { total: 0, success: 0, error: 0, skipped: 0 }
+      { total: 0, success: 0, error: 0, followed: 0 }
     );
     newStats.total = newStats.success + newStats.error;
     setStats(newStats as Stats);

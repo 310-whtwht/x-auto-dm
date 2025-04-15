@@ -330,10 +330,21 @@ export default function Home() {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      minHeight: '100vh',
+      maxWidth: '100vw',
+      overflow: 'hidden'
+    }}>
       <Header />
 
-      <Box component="main" sx={{ flexGrow: 1, p: 4 }}>
+      <Box component="main" sx={{ 
+        flexGrow: 1, 
+        p: 4,
+        overflowY: 'auto',
+        overflowX: 'hidden'
+      }}>
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 
@@ -453,21 +464,27 @@ export default function Home() {
             </Paper>
           </Grid>
         </Grid>
+      </Box>
 
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            mt: 3,
-          }}
-        >
-          <Button variant="contained" color="error" onClick={handleClear}>
-            クリア
-          </Button>
-          <Button variant="outlined" color="primary" onClick={handleDebug}>
-            デバッグ
-          </Button>
-        </Box>
+      <Box sx={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        display: "flex",
+        justifyContent: "space-between",
+        p: 2,
+        bgcolor: 'background.paper',
+        borderTop: 1,
+        borderColor: 'divider',
+        zIndex: 1
+      }}>
+        <Button variant="contained" color="error" onClick={handleClear}>
+          クリア
+        </Button>
+        <Button variant="outlined" color="primary" onClick={handleDebug}>
+          デバッグ
+        </Button>
       </Box>
 
       <Footer />

@@ -211,9 +211,9 @@ export function SettingsDialog({
         </IconButton>
       </DialogTitle>
       <DialogContent>
-        <Box sx={{ pt: 2 }}>
+        <Box sx={{ pt: 2, pb: 1 }}>
           {errors.length > 0 && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 3 }}>
               {errors.map((error, index) => (
                 <div key={index}>{error}</div>
               ))}
@@ -221,214 +221,265 @@ export function SettingsDialog({
           )}
 
           <Grid container spacing={3}>
-
             <Grid item xs={12}>
-              <Typography
-                variant="subtitle1"
-                sx={{ mb: 2, fontWeight: "bold" }}
-              >
-                抽出設定
-              </Typography>
-              <TextField
-                fullWidth
-                label="フォロワーURL"
-                placeholder="https://x.com/{username}/followers"
-                value={localSettings.followerUrl}
-                onChange={handleUrlChange}
-                error={!!urlError}
-                helperText={urlError}
-              />
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  抽出設定
+                </Typography>
+                <TextField
+                  fullWidth
+                  label="フォロワーURL"
+                  placeholder="https://x.com/{username}/followers"
+                  value={localSettings.followerUrl}
+                  onChange={handleUrlChange}
+                  error={!!urlError}
+                  helperText={urlError}
+                />
+              </Box>
             </Grid>
 
             <Grid item xs={12}>
-              <Divider sx={{ my: 1 }} />
+              <Divider />
             </Grid>
 
-            <Grid item xs={6}>
-            <Typography
-                variant="subtitle1"
-                sx={{ mb: 2, fontWeight: "bold" }}
-              >
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
                 送信設定
               </Typography>
-              <TextField
-                fullWidth
-                type="number"
-                label="送信間隔（最小）(秒)"
-                inputProps={{ min: 5, max: 7200 }}
-                value={localSettings.interval.min}
-                onChange={(e) =>
-                  handleIntervalChange("min", Number(e.target.value))
-                }
-                error={
-                  localSettings.interval.min < 5 ||
-                  localSettings.interval.min > 7200
-                }
-                helperText="5秒から7200秒の間で設定してください"
-              />
             </Grid>
+
             <Grid item xs={6}>
-              <TextField
-                fullWidth
-                type="number"
-                label="送信間隔（最大）(秒)"
-                inputProps={{ min: 5, max: 7200 }}
-                value={localSettings.interval.max}
-                onChange={(e) =>
-                  handleIntervalChange("max", Number(e.target.value))
-                }
-                error={
-                  localSettings.interval.max < 5 ||
-                  localSettings.interval.max > 7200 ||
-                  localSettings.interval.max < localSettings.interval.min
-                }
-                helperText={
-                  localSettings.interval.max < localSettings.interval.min
-                    ? "最大値は最小値より大きい値を設定してください"
-                    : "5秒から7200秒の間で設定してください"
-                }
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                type="number"
-                label="1日の送信上限(件)"
-                inputProps={{ min: 1, max: 500 }}
-                value={localSettings.dailyLimit}
-                onChange={(e) => handleDailyLimitChange(Number(e.target.value))}
-                error={
-                  localSettings.dailyLimit < 1 || localSettings.dailyLimit > 500
-                }
-                helperText="1件から500件の間で設定してください"
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Divider sx={{ my: 1 }} />
-            </Grid>
-
-            <Grid item xs={12}>
               <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-                  DM送信文言
-                </Typography>
                 <Typography
                   variant="body2"
                   color="text.secondary"
                   sx={{ mb: 1 }}
                 >
-                  ニックネームを挿入するには ${"${nick_name}"}{" "}
-                  を使用してください。
-                  <br />
-                  例：「${"${nick_name}"}さん、はじめまして！」
+                  送信間隔（秒）
                 </Typography>
-                <Typography variant="body2" color="error" sx={{ mb: 1 }}>
-                  ⚠️絵文字・特殊文字は使用できません。
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="最小"
+                  size="small"
+                  inputProps={{ min: 5, max: 7200 }}
+                  value={localSettings.interval.min}
+                  onChange={(e) =>
+                    handleIntervalChange("min", Number(e.target.value))
+                  }
+                  error={
+                    localSettings.interval.min < 5 ||
+                    localSettings.interval.min > 7200
+                  }
+                  helperText="5秒から7200秒の間で設定してください"
+                />
+              </Box>
+            </Grid>
+            <Grid item xs={6}>
+              <Box sx={{ mb: 2 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  &nbsp;
                 </Typography>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="最大"
+                  size="small"
+                  inputProps={{ min: 5, max: 7200 }}
+                  value={localSettings.interval.max}
+                  onChange={(e) =>
+                    handleIntervalChange("max", Number(e.target.value))
+                  }
+                  error={
+                    localSettings.interval.max < 5 ||
+                    localSettings.interval.max > 7200 ||
+                    localSettings.interval.max < localSettings.interval.min
+                  }
+                  helperText={
+                    localSettings.interval.max < localSettings.interval.min
+                      ? "最大値は最小値より大きい値を設定してください"
+                      : "5秒から7200秒の間で設定してください"
+                  }
+                />
               </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mb: 2,
-                }}
-              >
-                <Tooltip title="DM送信文言を追加">
-                  <IconButton
-                    onClick={handleAddMessage}
-                    disabled={localSettings.messages.length >= 5}
-                  >
-                    <AddCircleOutlineIcon />
-                  </IconButton>
-                </Tooltip>
+            </Grid>
+            <Grid item xs={12}>
+              <Box sx={{ mb: 3 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  1日の送信上限
+                </Typography>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="送信上限（件）"
+                  size="small"
+                  inputProps={{ min: 1, max: 500 }}
+                  value={localSettings.dailyLimit}
+                  onChange={(e) =>
+                    handleDailyLimitChange(Number(e.target.value))
+                  }
+                  error={
+                    localSettings.dailyLimit < 1 ||
+                    localSettings.dailyLimit > 500
+                  }
+                  helperText="1件から500件の間で設定してください"
+                />
               </Box>
-              {localSettings.messages.map((message, index) => (
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ mb: 3 }} />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  DM送信文言
+                </Typography>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography variant="body2" sx={{ mb: 1 }}>
+                    ニックネームを挿入するには <code>${"${nick_name}"}</code>{" "}
+                    を使用してください。
+                    <br />
+                    例：「<code>${"${nick_name}"}</code>さん、はじめまして！」
+                  </Typography>
+                  <Typography variant="body2" color="error">
+                    ⚠️ 絵文字・特殊文字は使用できません。
+                  </Typography>
+                </Alert>
                 <Box
-                  key={index}
                   sx={{
-                    mb: 2,
                     display: "flex",
-                    alignItems: "flex-start",
-                    gap: 1, // アイコンとテキストエリアの間隔
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    mb: 2,
                   }}
                 >
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={4}
-                    label={`DM送信文言 ${index + 1}`}
-                    value={message}
-                    onChange={(e) => {
-                      const newMessages = [...localSettings.messages];
-                      newMessages[index] = e.target.value;
-                      setLocalSettings({
-                        ...localSettings,
-                        messages: newMessages,
-                      });
-                      setErrors([]);
-                    }}
-                    error={message.trim() === ""}
-                    helperText={
-                      message.trim() === "" ? "文言を入力してください" : ""
-                    }
-                  />
-                  {localSettings.messages.length > 1 && (
-                    <IconButton
-                      onClick={() => handleDeleteMessage(index)}
-                      sx={{
-                        mt: 1, // テキストエリアのラベルに合わせて微調整
-                      }}
-                    >
-                      <DeleteOutlineIcon />
-                    </IconButton>
-                  )}
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddCircleOutlineIcon />}
+                    onClick={handleAddMessage}
+                    disabled={localSettings.messages.length >= 5}
+                    size="small"
+                  >
+                    文言を追加
+                  </Button>
                 </Box>
-              ))}
+                {localSettings.messages.map((message, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      mb: 3,
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 1,
+                    }}
+                  >
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={4}
+                      label={`送信文言 ${index + 1}`}
+                      value={message}
+                      onChange={(e) => {
+                        const newMessages = [...localSettings.messages];
+                        newMessages[index] = e.target.value;
+                        setLocalSettings({
+                          ...localSettings,
+                          messages: newMessages,
+                        });
+                        setErrors([]);
+                      }}
+                      error={message.trim() === ""}
+                      helperText={
+                        message.trim() === "" ? "文言を入力してください" : ""
+                      }
+                    />
+                    {localSettings.messages.length > 1 && (
+                      <Tooltip title="この文言を削除">
+                        <IconButton
+                          onClick={() => handleDeleteMessage(index)}
+                          color="error"
+                          sx={{ mt: 1 }}
+                        >
+                          <DeleteOutlineIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
+                ))}
+              </Box>
             </Grid>
             <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={localSettings.skipExisting}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        skipExisting: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="既存DM送信済みユーザーをスキップする"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={localSettings.followBeforeDM}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        followBeforeDM: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="メッセージ画面遷移前にフォローする"
-              />
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                  その他の設定
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={localSettings.skipExisting}
+                      onChange={(e) =>
+                        setLocalSettings({
+                          ...localSettings,
+                          skipExisting: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label="既存DM送信済みユーザーをスキップする"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={localSettings.followBeforeDM}
+                      onChange={(e) =>
+                        setLocalSettings({
+                          ...localSettings,
+                          followBeforeDM: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label="メッセージ画面遷移前にフォローする"
+                />
+              </Box>
             </Grid>
           </Grid>
         </Box>
       </DialogContent>
       <DialogActions
-        sx={{ display: "flex", justifyContent: "space-between", px: 3, pb: 3 }}
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          px: 3,
+          pb: 3,
+          pt: 3,
+          borderTop: 1,
+          borderColor: "divider",
+          bgcolor: (theme) =>
+            theme.palette.mode === "dark"
+              ? "rgba(255, 255, 255, 0.02)"
+              : "rgba(0, 0, 0, 0.02)",
+        }}
       >
-        <Button variant="contained" color="error" onClick={handleReset}>
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={handleReset}
+          size="large"
+        >
           設定クリア
         </Button>
-        <Button variant="contained" onClick={handleSave}>
+        <Button variant="contained" onClick={handleSave} size="large">
           保存
         </Button>
       </DialogActions>

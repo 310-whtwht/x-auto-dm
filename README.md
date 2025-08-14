@@ -117,6 +117,41 @@ python scripts/scrape_followers.py [ターゲットユーザー名]
 - 送信間隔が短すぎる場合は、設定画面で間隔を長くしてください
 - 1 日の送信上限に達している場合は、24 時間待つ必要があります
 
+### ChromeDriver バージョンエラー
+
+Chromeがアップデートされた後に以下のエラーが発生した場合：
+
+**解決方法：**
+
+1. **自動同期（推奨）**
+   ```bash
+   npm run sync-chromedriver
+   ```
+
+2. **手動でのバージョン確認**
+   ```bash
+   # Chromeのバージョンを確認
+   /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --version
+   
+   # ChromeDriverのバージョンを確認
+   ./node_modules/.bin/chromedriver --version
+   ```
+
+3. **手動でChromeDriverを更新**
+   ```bash
+   npm install chromedriver@latest
+   ```
+
+4. **完全再インストール（上記で解決しない場合）**
+   ```bash
+   npm uninstall chromedriver
+   npm install chromedriver
+   ```
+
+**予防策：**
+- Chromeの自動アップデートを有効にしている場合は、定期的に `npm run sync-chromedriver` を実行
+- 週に1回程度の定期チェックを推奨
+
 ## 注意事項
 
 - このツールは自己責任で使用してください

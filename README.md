@@ -45,8 +45,8 @@ npm run dev
 
 3. **Python 3.11のインストール**
    ```bash
-   pyenv install 3.11.9
-   pyenv local 3.11.9
+   pyenv install 3.11.2
+   pyenv local 3.11.2
    ```
 
 4. **Node.jsのインストール**

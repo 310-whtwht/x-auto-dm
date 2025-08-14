@@ -25,11 +25,21 @@ export function Header() {
   const { users } = useUsers();
 
   const handleExport = () => {
-    if (users.length === 0) {
+    // 最新のデータをlocalStorageから直接取得
+    const savedUsers = localStorage.getItem("users");
+    const latestUsers = savedUsers ? JSON.parse(savedUsers) : users;
+
+    if (latestUsers.length === 0) {
       alert("エクスポートするデータがありません");
       return;
     }
-    exportToCsv(users);
+
+    console.log("CSVエクスポート実行:", {
+      フックから取得したユーザー数: users.length,
+      localStorageから取得したユーザー数: latestUsers.length,
+    });
+
+    exportToCsv(latestUsers);
   };
 
   const handleRefresh = () => {
@@ -60,18 +70,19 @@ export function Header() {
             >
               <HelpIcon />
             </IconButton>
-            <IconButton
+            <Button
               color="inherit"
               onClick={handleExport}
-              aria-label="エクスポート"
+              startIcon={<FileDownloadIcon />}
+              sx={{ textTransform: "none" }}
             >
-              <FileDownloadIcon />
-            </IconButton>
-            <Tooltip title="リロード">
+              一時保存
+            </Button>
+            {/* <Tooltip title="リロード">
               <IconButton color="inherit" onClick={handleRefresh} size="large">
                 <RefreshIcon />
               </IconButton>
-            </Tooltip>
+            </Tooltip> */}
           </Box>
         </Toolbar>
       </AppBar>

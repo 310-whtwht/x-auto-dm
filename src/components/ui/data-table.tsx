@@ -11,21 +11,21 @@ interface DataTableProps {
 }
 
 export function DataTable({ data, onUserUpdate }: DataTableProps) {
-  const [selectAll, setSelectAll] = useState(data.every((user) => user.isSend));
+  // データが変更されたときにselectAllの状態を更新
+  const selectAll = data.length > 0 && data.every((user) => user.isSend);
 
-  const handleCheckboxChange = (userId: string) => {
-    const user = data.find((u) => u.userId === userId);
+  const handleCheckboxChange = (uniqueId: string) => {
+    const user = data.find((u) => u.uniqueId === uniqueId);
     if (user) {
-      onUserUpdate(userId, { isSend: !user.isSend });
+      onUserUpdate(uniqueId, { isSend: !user.isSend });
     }
   };
 
   const handleSelectAll = () => {
     const newValue = !selectAll;
     data.forEach((user) => {
-      onUserUpdate(user.userId, { isSend: newValue });
+      onUserUpdate(user.uniqueId, { isSend: newValue });
     });
-    setSelectAll(newValue);
   };
 
   const columns: GridColDef[] = [
@@ -43,7 +43,7 @@ export function DataTable({ data, onUserUpdate }: DataTableProps) {
       renderCell: (params) => (
         <Checkbox
           checked={params.row.isSend}
-          onChange={() => handleCheckboxChange(params.row.userId)}
+          onChange={() => handleCheckboxChange(params.row.uniqueId)}
         />
       ),
     },
@@ -158,7 +158,7 @@ export function DataTable({ data, onUserUpdate }: DataTableProps) {
   ];
 
   const rows = data.map((user) => ({
-    id: user.userId,
+    id: user.uniqueId,
     ...user,
   }));
 
@@ -169,7 +169,7 @@ export function DataTable({ data, onUserUpdate }: DataTableProps) {
         columns={columns}
         disableRowSelectionOnClick
         processRowUpdate={(updatedRow, originalRow) => {
-          onUserUpdate(updatedRow.userId, {
+          onUserUpdate(updatedRow.uniqueId, {
             nickname: updatedRow.nickname,
             isSend: updatedRow.isSend,
           });

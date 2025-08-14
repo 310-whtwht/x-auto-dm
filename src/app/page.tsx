@@ -189,11 +189,11 @@ export default function Home() {
               `${userId} へのDM送信が成功しました`,
               `残り送信可能数: ${settings.dailyLimit - dailySendCount}件`
             ]);
-            await updateUser(userId, { status: data.status });
+            await updateUser(currentUser.uniqueId, { status: data.status });
           } else {
             // throw new Error(data.error || "DM送信に失敗しました");
             setLogs(prev => [...prev, `${userId}: ${data.error}`]);
-            await updateUser(userId, { status: data.status });
+            await updateUser(currentUser.uniqueId, { status: data.status });
           }
 
           await new Promise(resolve => setTimeout(resolve, 2000));
@@ -206,7 +206,12 @@ export default function Home() {
           console.error(`Failed to send DM to ${userId}:`, error);
           const errorMessage = error instanceof Error ? error.message : '不明なエラーが発生しました';
           setLogs(prev => [...prev, `${userId} へのDM送信が失敗: ${errorMessage}`]);
-          await updateUser(userId, { status: "error" });
+          
+          // currentUserを再取得してからupdateUserを呼び出し
+          const errorUser = users.find(u => u.userId === userId);
+          if (errorUser) {
+            await updateUser(errorUser.uniqueId, { status: "error" });
+          }
         }
       }
 
@@ -239,6 +244,7 @@ export default function Home() {
   const handleDebug = () => {
     const debugUsers: User[] = [
       {
+        uniqueId: "user1",
         userId: "user1",
         name: "山田太郎（営業部）",
         nickname: "山田太郎",
@@ -248,6 +254,7 @@ export default function Home() {
         isSend: false,
       },
       {
+        uniqueId: "user2",
         userId: "user2",
         name: "鈴木花子|デザイナー",
         nickname: "鈴木花子",
@@ -257,6 +264,7 @@ export default function Home() {
         isSend: false,
       },
       {
+        uniqueId: "user3",
         userId: "user3",
         name: "佐藤一郎@エンジニア",
         nickname: "佐藤一郎",
@@ -266,6 +274,7 @@ export default function Home() {
         isSend: false,
       },
       {
+        uniqueId: "user4",
         userId: "user4",
         name: "田中企画",
         nickname: "田中企画",
@@ -281,7 +290,7 @@ export default function Home() {
 
   const handleImportClick = () => {
     if (users.length > 0) {
-      if (confirm("既存のデータは全て削除されます。CSVをインポートしますか？")) {
+      if (confirm("インポートしたデータは既存のデータに追加されます。もし別のCSVを追加せず新しく使用したい場合はクリアしてからインポートしてください。CSVをインポートしますか？")) {
         fileInputRef.current?.click();
       }
     } else {
@@ -294,15 +303,12 @@ export default function Home() {
     if (!file) return;
 
     try {
-      await clearAllUsers();
-      
       const users = await importFromCsv(file);
-      addUsers(users);
+      const result = await addUsers(users);
       
       setLogs(prev => [
         ...prev, 
-        "既存のデータを削除しました",
-        `${users.length}件のユーザーを読み込みました`
+        `${result.added}件のユーザーを追加しました${result.skipped > 0 ? ` (${result.skipped}件の重複をスキップ)` : ''}`
       ]);
     } catch (error) {
       console.error('CSVインポートエラー:', error);

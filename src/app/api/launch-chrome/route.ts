@@ -35,8 +35,20 @@ async function isPortInUse(port: number): Promise<boolean> {
 // Chromeプロセスを終了する関数
 async function killChromeProcesses(): Promise<void> {
   try {
+    // Chromeプロセスを終了
     await execAsync("pkill -f 'Google Chrome'");
     console.log("既存のChromeプロセスを終了しました");
+
+    // 少し待機
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // まだ残っているプロセスがあれば強制終了
+    try {
+      await execAsync("pkill -9 -f 'Google Chrome'");
+      console.log("残存Chromeプロセスを強制終了しました");
+    } catch (error) {
+      // 強制終了するプロセスがない場合は無視
+    }
   } catch (error) {
     console.log("終了するChromeプロセスが見つかりませんでした");
   }
@@ -46,30 +58,30 @@ export async function POST() {
   try {
     const port = 9222;
 
-    // 既存のChromeプロセスが9222ポートで動いているかチェック
-    if (await isPortInUse(port)) {
-      console.log("既存のChromeプロセスが9222ポートで動作中です");
-      return NextResponse.json({
-        success: true,
-        message: "既存のChromeセッションに接続可能です",
-        port: port,
-      });
-    }
-
     // 既存のChromeプロセスを終了
+    console.log("既存のChromeプロセスを終了中...");
     await killChromeProcesses();
+
+    // ChromeDriverプロセスも終了
+    try {
+      await execAsync("pkill -f chromedriver");
+      console.log("ChromeDriverプロセスを終了しました");
+    } catch (error) {
+      console.log("終了するChromeDriverプロセスが見つかりませんでした");
+    }
 
     // 少し待機してからポートをチェック
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // ポートの競合をチェック
     if (await isPortInUse(port)) {
-      return NextResponse.json(
-        {
-          error: `ポート ${port} は既に使用中です。別のプロセスが実行中かもしれません。`,
-        },
-        { status: 500 }
-      );
+      console.log("ポートがまだ使用中です。強制終了を試行...");
+      try {
+        await execAsync(`lsof -ti:${port} | xargs kill -9`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.log("ポートの強制終了に失敗しました");
+      }
     }
 
     // Chromeのパスを検索

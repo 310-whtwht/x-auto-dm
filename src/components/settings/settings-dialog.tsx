@@ -20,6 +20,7 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { NumericFormat } from "react-number-format";
 import { Settings } from "@/types";
 import { useState, useEffect } from "react";
 
@@ -113,19 +114,6 @@ export function SettingsDialog({
       [type]: value,
     };
 
-    // 入力値の範囲チェック
-    if (value < 5 || value > 7200) {
-      return;
-    }
-
-    // 最小値が最大値を超えないようにチェック
-    if (type === "min" && value > localSettings.interval.max) {
-      return;
-    }
-    if (type === "max" && value < localSettings.interval.min) {
-      return;
-    }
-
     setLocalSettings({
       ...localSettings,
       interval: newInterval,
@@ -133,38 +121,16 @@ export function SettingsDialog({
   };
 
   const handleDailyLimitChange = (value: number) => {
-    if (value < 1 || value > 500) {
-      return;
-    }
-
     setLocalSettings({
       ...localSettings,
       dailyLimit: value,
     });
   };
 
-  // URLバリデーション関数
+  // URLバリデーション関数（無効化）
   const validateFollowerUrl = (url: string): boolean => {
-    try {
-      const urlObj = new URL(url);
-      // X(Twitter)のフォロワーURLの形式チェック
-      const isValidFormat = /^https?:\/\/(twitter|x)\.com\/[a-zA-Z0-9_]+\/followers\/?$/.test(
-        url
-      );
-
-      if (!isValidFormat) {
-        setUrlError(
-          "正しいフォロワーURLを入力してください（例：https://x.com/username/followers）"
-        );
-        return false;
-      }
-
-      setUrlError("");
-      return true;
-    } catch {
-      setUrlError("有効なURLを入力してください");
-      return false;
-    }
+    // バリデーションを無効化
+    return true;
   };
 
   // URL変更時のハンドラー
@@ -174,20 +140,10 @@ export function SettingsDialog({
       ...localSettings,
       followerUrl: newUrl,
     });
-    if (newUrl) {
-      validateFollowerUrl(newUrl);
-    } else {
-      setUrlError("");
-    }
+    setUrlError(""); // エラーをクリア
   };
 
   const handleSave = () => {
-    if (
-      localSettings.followerUrl &&
-      !validateFollowerUrl(localSettings.followerUrl)
-    ) {
-      return;
-    }
     if (validateSettings()) {
       onSave(localSettings);
       onOpenChange(false);
@@ -232,8 +188,6 @@ export function SettingsDialog({
                   placeholder="https://x.com/{username}/followers"
                   value={localSettings.followerUrl}
                   onChange={handleUrlChange}
-                  error={!!urlError}
-                  helperText={urlError}
                 />
               </Box>
             </Grid>
@@ -257,16 +211,17 @@ export function SettingsDialog({
                 >
                   送信間隔（秒）
                 </Typography>
-                <TextField
+                <NumericFormat
+                  customInput={TextField}
                   fullWidth
-                  type="number"
                   label="最小"
                   size="small"
-                  inputProps={{ min: 5, max: 7200 }}
                   value={localSettings.interval.min}
-                  onChange={(e) =>
-                    handleIntervalChange("min", Number(e.target.value))
-                  }
+                  onValueChange={(values) => {
+                    handleIntervalChange("min", values.floatValue || 0);
+                  }}
+                  allowNegative={false}
+                  decimalScale={0}
                   error={
                     localSettings.interval.min < 5 ||
                     localSettings.interval.min > 7200
@@ -284,16 +239,17 @@ export function SettingsDialog({
                 >
                   &nbsp;
                 </Typography>
-                <TextField
+                <NumericFormat
+                  customInput={TextField}
                   fullWidth
-                  type="number"
                   label="最大"
                   size="small"
-                  inputProps={{ min: 5, max: 7200 }}
                   value={localSettings.interval.max}
-                  onChange={(e) =>
-                    handleIntervalChange("max", Number(e.target.value))
-                  }
+                  onValueChange={(values) => {
+                    handleIntervalChange("max", values.floatValue || 0);
+                  }}
+                  allowNegative={false}
+                  decimalScale={0}
                   error={
                     localSettings.interval.max < 5 ||
                     localSettings.interval.max > 7200 ||
@@ -316,16 +272,17 @@ export function SettingsDialog({
                 >
                   1日の送信上限
                 </Typography>
-                <TextField
+                <NumericFormat
+                  customInput={TextField}
                   fullWidth
-                  type="number"
                   label="送信上限（件）"
                   size="small"
-                  inputProps={{ min: 1, max: 500 }}
                   value={localSettings.dailyLimit}
-                  onChange={(e) =>
-                    handleDailyLimitChange(Number(e.target.value))
-                  }
+                  onValueChange={(values) => {
+                    handleDailyLimitChange(values.floatValue || 0);
+                  }}
+                  allowNegative={false}
+                  decimalScale={0}
                   error={
                     localSettings.dailyLimit < 1 ||
                     localSettings.dailyLimit > 500
@@ -423,6 +380,7 @@ export function SettingsDialog({
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   その他の設定
                 </Typography>
+                {/* 未実装のためコメントアウト
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -437,6 +395,7 @@ export function SettingsDialog({
                   }
                   label="既存DM送信済みユーザーをスキップする"
                 />
+                */}
                 <FormControlLabel
                   control={
                     <Checkbox

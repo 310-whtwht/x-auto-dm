@@ -27,13 +27,14 @@ export async function POST(request: Request): Promise<Response> {
     return new Promise<Response>((resolve) => {
       // Pythonスクリプトを実行
       const pythonProcess = exec(
-        `python3 "${scriptPath}" "${targetUsername}"`,
+        `python "${scriptPath}" "${targetUsername}"`,
         {
           env: {
             ...process.env,
             TWITTER_USERNAME: process.env.TWITTER_USERNAME,
             TWITTER_PASSWORD: process.env.TWITTER_PASSWORD,
             PATH: process.env.PATH,
+            PYTHONPATH: process.env.PYTHONPATH,
           },
         },
         (error, stdout, stderr) => {

@@ -20,7 +20,9 @@ export async function initDB() {
   return openDB<XDMDatabase>(DB_NAME, DB_VERSION, {
     upgrade(db) {
       if (!db.objectStoreNames.contains("users")) {
-        const userStore = db.createObjectStore("users", { keyPath: "userId" });
+        const userStore = db.createObjectStore("users", {
+          keyPath: "uniqueId",
+        });
         userStore.createIndex("by-status", "status");
       }
       if (!db.objectStoreNames.contains("settings")) {

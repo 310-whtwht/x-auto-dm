@@ -15,10 +15,27 @@ export function useUsers() {
   const [stats, setStats] = useState<Stats>(DEFAULT_STATS);
 
   useEffect(() => {
-    const saved = localStorage.getItem("users");
-    if (saved) {
-      setUsers(JSON.parse(saved));
-    }
+    const loadUsers = () => {
+      const saved = localStorage.getItem("users");
+      if (saved) {
+        const parsedUsers = JSON.parse(saved);
+        setUsers(parsedUsers);
+        updateStats(parsedUsers);
+      }
+    };
+
+    // 初期読み込み
+    loadUsers();
+
+    // localStorageの変更を監視
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "users") {
+        loadUsers();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const updateStats = (currentUsers: User[]) => {
@@ -35,12 +52,13 @@ export function useUsers() {
     setStats(newStats);
   };
 
-  const updateUser = async (userId: string, updates: Partial<User>) => {
+  const updateUser = async (uniqueId: string, updates: Partial<User>) => {
     setUsers((prevUsers) => {
       const newUsers = prevUsers.map((user) =>
-        user.userId === userId ? { ...user, ...updates } : user
+        user.uniqueId === uniqueId ? { ...user, ...updates } : user
       );
       localStorage.setItem("users", JSON.stringify(newUsers));
+      updateStats(newUsers);
       return newUsers;
     });
   };
@@ -51,7 +69,18 @@ export function useUsers() {
       追加するユーザー数: newUsers.length,
     });
 
-    const updatedUsers = [...users, ...newUsers];
+    // 重複チェック: 既存のuserIdを持つユーザーは除外
+    const existingUserIds = new Set(users.map((user) => user.userId));
+    const uniqueNewUsers = newUsers.filter(
+      (user) => !existingUserIds.has(user.userId)
+    );
+
+    const skippedCount = newUsers.length - uniqueNewUsers.length;
+    if (skippedCount > 0) {
+      console.log(`重複ユーザー ${skippedCount}件 をスキップしました`);
+    }
+
+    const updatedUsers = [...users, ...uniqueNewUsers];
     console.log("addUsers: 更新後のユーザー数", updatedUsers.length);
 
     try {
@@ -59,8 +88,12 @@ export function useUsers() {
       setUsers(updatedUsers);
       updateStats(updatedUsers);
       console.log("addUsers: 保存完了");
+
+      // 重複スキップ情報を返す
+      return { added: uniqueNewUsers.length, skipped: skippedCount };
     } catch (error) {
       console.error("ユーザー追加エラー:", error);
+      return { added: 0, skipped: 0 };
     }
   };
 

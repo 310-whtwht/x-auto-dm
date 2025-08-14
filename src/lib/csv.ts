@@ -1,12 +1,18 @@
 import { User } from "@/types";
 import Papa from "papaparse";
 import dayjs from "dayjs";
+import { addUniqueIdsToUsers } from "@/lib/utils";
 
 export const exportToCsv = (users: User[]) => {
-  // localStorageから最新のユーザーデータを取得
-  const savedUsers = localStorage.getItem("users");
-  console.log("savedUsers", savedUsers);
-  const latestUsers: User[] = savedUsers ? JSON.parse(savedUsers) : users;
+  // 引数として渡された最新のユーザーデータを使用
+  const latestUsers: User[] = users;
+  console.log("CSVエクスポート: 使用するユーザーデータ", {
+    ユーザー数: latestUsers.length,
+    ユーザー一覧: latestUsers.map((u) => ({
+      userId: u.userId,
+      status: u.status,
+    })),
+  });
 
   const data = latestUsers.map((user: User) => ({
     userId: user.userId,
@@ -40,7 +46,7 @@ export const importFromCsv = async (file: File): Promise<User[]> => {
       header: true,
       complete: (results) => {
         try {
-          const users: User[] = results.data
+          const usersWithoutUniqueId = results.data
             .map((row: any) => ({
               userId: row.userId || "",
               name: row.name || "",
@@ -49,9 +55,15 @@ export const importFromCsv = async (file: File): Promise<User[]> => {
               status:
                 (row.status as "pending" | "followed" | "success" | "error") ||
                 "pending",
-              isSend: row.isSend === "true",
+              isSend:
+                row.isSend === "true" || row.isSend === undefined
+                  ? true
+                  : row.isSend === "true",
             }))
             .filter((user) => user.userId && user.name);
+
+          // uniqueIdを自動的に付与
+          const users = addUniqueIdsToUsers(usersWithoutUniqueId);
           resolve(users);
         } catch (error) {
           reject(new Error("CSVファイルの形式が正しくありません"));

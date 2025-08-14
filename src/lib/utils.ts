@@ -1,4 +1,32 @@
 import { User } from "@/types";
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+// UUIDを生成する関数
+export function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+// UserオブジェクトにuniqueIdを付与する関数
+export function addUniqueIdToUser(user: Omit<User, 'uniqueId'>): User {
+  return {
+    ...user,
+    uniqueId: generateUUID()
+  };
+}
+
+// Userオブジェクトの配列にuniqueIdを付与する関数
+export function addUniqueIdsToUsers(users: Omit<User, 'uniqueId'>[]): User[] {
+  return users.map(user => addUniqueIdToUser(user));
+}
 
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

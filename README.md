@@ -4,50 +4,72 @@ X（旧 Twitter）のフォロワーに対して自動で DM を送信するツ�
 
 ## 環境構築
 
-### 必要なもの
-
-- Python 3.8 以上
-- Chrome ブラウザ
-- Node.js 16 以上
-
-### セットアップ手順
-
-1. リポジトリをクローン
+### クイックスタート（推奨）
 
 ```bash
+# リポジトリをクローン
 git clone [リポジトリURL]
 cd x-send-dm
-```
 
-2. Python 環境のセットアップ
+# ワンコマンドで環境構築
+npm run setup
 
-```bash
-# 仮想環境の作成
-python -m venv venv
-
-# 仮想環境の有効化
-# Windowsの場合
-venv\Scripts\activate
-# Mac/Linuxの場合
-source venv/bin/activate
-
-# 依存関係のインストール
-pip install -r requirements.txt
-```
-
-3. Node.js 環境のセットアップ
-
-```bash
-# 依存関係のインストール
-npm install
-```
-
-4. アプリケーションの起動
-
-```bash
-# 開発サーバーの起動
+# アプリケーション起動
 npm run dev
 ```
+
+ブラウザで http://localhost:3000 にアクセスしてください。
+
+### 手動セットアップ
+
+#### 必要なもの
+
+- macOS (Intel/Apple Silicon対応)
+- Google Chrome
+- インターネット接続
+
+#### 詳細なセットアップ手順
+
+1. **Homebrewのインストール**
+   ```bash
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   ```
+
+2. **pyenvのインストール**
+   ```bash
+   brew install pyenv
+   echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
+   echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
+   echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+   ```
+
+3. **Python 3.11のインストール**
+   ```bash
+   pyenv install 3.11.9
+   pyenv local 3.11.9
+   ```
+
+4. **Node.jsのインストール**
+   ```bash
+   brew install node
+   ```
+
+5. **依存関係のインストール**
+   ```bash
+   # Python依存関係
+   pip install -r requirements.txt
+   
+   # Node.js依存関係
+   npm install
+   
+   # ChromeDriver同期
+   npm run sync-chromedriver
+   ```
+
+6. **アプリケーション起動**
+   ```bash
+   npm run dev
+   ```
 
 ## 使用方法
 

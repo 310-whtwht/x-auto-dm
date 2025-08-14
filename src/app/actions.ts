@@ -2,7 +2,7 @@
 
 import { User } from "@/types";
 import puppeteer from "puppeteer";
-import { extractNickname, replaceMessageVariables } from "@/lib/utils";
+import { extractNickname, replaceMessageVariables, addUniqueIdToUser } from "@/lib/utils";
 import fs from "fs/promises";
 import path from 'path';
 import os from 'os';
@@ -208,14 +208,14 @@ export async function extractUsers(url: string): Promise<User[]> {
             });
 
             if (username && userId) {
-              users.push({
+              users.push(addUniqueIdToUser({
                 name: username,
                 userId: userId,
                 nickname: username.split(/[(@（｜]/, 1)[0],
                 profile: profile.trim(),
                 status: 'pending',
-                isSend: false
-              });
+                isSend: true
+              }));
             }
           }
         });

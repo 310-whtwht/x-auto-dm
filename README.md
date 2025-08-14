@@ -121,6 +121,10 @@ python scripts/scrape_followers.py [ターゲットユーザー名]
 
 Chromeがアップデートされた後に以下のエラーが発生した場合：
 
+```
+chromedriver version (139.0.6943.98) ... might not be compatible with ... chrome version (140.0.xxxx.xx)
+```
+
 **解決方法：**
 
 1. **自動同期（推奨）**

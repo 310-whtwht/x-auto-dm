@@ -63,13 +63,14 @@ export function Header() {
             </Typography>
           </Box>
           <Box sx={{ display: "flex", gap: 1 }}>
-            <IconButton
+            <Button
               color="inherit"
               onClick={() => setIsHelpOpen(true)}
-              aria-label="ヘルプ"
+              startIcon={<HelpIcon sx={{ color: "#FFD700" }} />}
+              sx={{ textTransform: "none" }}
             >
-              <HelpIcon />
-            </IconButton>
+              操作説明
+            </Button>
             <Button
               color="inherit"
               onClick={handleExport}

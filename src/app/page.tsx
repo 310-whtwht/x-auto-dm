@@ -478,7 +478,7 @@ export default function Home() {
         left: 0,
         right: 0,
         display: "flex",
-        justifyContent: "space-between",
+        justifyContent: "end",
         p: 2,
         bgcolor: 'background.paper',
         borderTop: 1,
@@ -488,9 +488,9 @@ export default function Home() {
         <Button variant="contained" color="error" onClick={handleClear}>
           クリア
         </Button>
-        <Button variant="outlined" color="primary" onClick={handleDebug}>
+        {/* <Button variant="outlined" color="primary" onClick={handleDebug}>
           デバッグ
-        </Button>
+        </Button> */}
       </Box>
 
       <Footer />

@@ -8,3 +8,7 @@ EOF
 dist
 out/
 .DS_Store
+
+# Chrome profiles
+chrome-profile/
+chrome-profile-with-login/

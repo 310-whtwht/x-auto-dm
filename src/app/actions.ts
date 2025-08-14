@@ -50,6 +50,8 @@ export async function handleLaunchChrome(): Promise<{ success: boolean; error?: 
   }
 }
 
+
+
 export async function extractUsers(url: string): Promise<User[]> {
   const logs: string[] = [];
   let browser;

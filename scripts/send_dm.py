@@ -1,9 +1,11 @@
 import sys
 import json
 import random
+import os
 from typing import Optional, Tuple
 from dataclasses import dataclass
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -60,8 +62,12 @@ def send_dm(user: User, message: str, settings: SendSettings) -> Tuple[bool, str
         options = Options()
         options.debugger_address = "127.0.0.1:9222"
         
+        # ChromeDriverのパスを明示的に指定
+        chromedriver_path = os.path.join(os.path.dirname(__file__), "..", "node_modules", ".bin", "chromedriver")
+        service = Service(executable_path=chromedriver_path)
+        
         print("既存のブラウザセッションに接続します...")
-        driver = webdriver.Chrome(options=options)
+        driver = webdriver.Chrome(service=service, options=options)
         wait = WebDriverWait(driver, 10)
 
         # 待機処理を実行
@@ -79,25 +85,60 @@ def send_dm(user: User, message: str, settings: SendSettings) -> Tuple[bool, str
         wait = WebDriverWait(driver, 20)  # タイムアウトを20秒に設定
         
         try:
-            # プロフィールのメインカラムが表示されるまで待機
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="primaryColumn"]')))
+            # ページが完全に読み込まれるまで待機
+            wait.until(lambda driver: driver.execute_script("return document.readyState") == "complete")
+            print("ページの読み込みが完了しました")
             
-            # ユーザー名が表示されるまで待機
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="UserName"]')))
+            # より柔軟な要素の待機（複数のパターンを試行）
+            try:
+                # プロフィールのメインカラムが表示されるまで待機
+                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="primaryColumn"]')))
+                print("primaryColumnが見つかりました")
+            except:
+                print("primaryColumnが見つかりませんでしたが、続行します")
+            
+            try:
+                # ユーザー名が表示されるまで待機
+                wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="UserName"]')))
+                print("UserNameが見つかりました")
+            except:
+                print("UserNameが見つかりませんでしたが、続行します")
             
             # フォローボタンが表示されるまで待機（複数のパターンに対応）
-            wait.until(lambda driver: driver.execute_script(f"""
-                return Boolean(
-                    document.querySelector(`[aria-label="フォロー @{user.userId}"]`) ||
-                    document.querySelector(`[aria-label="フォローバック @{user.userId}"]`) ||
-                    document.querySelector(`[aria-label="フォロー中 @{user.userId}"]`)
-                )
-            """))
+            try:
+                wait.until(lambda driver: driver.execute_script(f"""
+                    return Boolean(
+                        document.querySelector(`[aria-label="フォロー @{user.userId}"]`) ||
+                        document.querySelector(`[aria-label="フォローバック @{user.userId}"]`) ||
+                        document.querySelector(`[aria-label="フォロー中 @{user.userId}"]`)
+                    )
+                """))
+                print("フォローボタンが見つかりました")
+            except:
+                print("フォローボタンが見つかりませんでしたが、続行します")
+            
+            # デバッグ: 利用可能なボタンを確認
+            debug_info = driver.execute_script("""
+                const buttons = document.querySelectorAll('button, [role="button"]');
+                const buttonInfo = [];
+                for (let i = 0; i < Math.min(buttons.length, 20); i++) {
+                    const btn = buttons[i];
+                    buttonInfo.push({
+                        text: btn.textContent?.trim() || '',
+                        ariaLabel: btn.getAttribute('aria-label') || '',
+                        dataTestId: btn.getAttribute('data-testid') || '',
+                        className: btn.className || ''
+                    });
+                }
+                return buttonInfo;
+            """)
+            print(f"利用可能なボタン情報: {debug_info}")
             
             print("プロフィールページのレンダリングが完了しました")
             
         except Exception as e:
             print(f"プロフィールページのレンダリング待機中にエラー: {str(e)}")
+            print(f"エラーの詳細: {type(e).__name__}: {e}")
             return False, "プロフィールページの読み込みに失敗しました", "error"
         
         # 安定性のため短い待機を追加
@@ -121,6 +162,21 @@ def send_dm(user: User, message: str, settings: SendSettings) -> Tuple[bool, str
                 const followingButton = document.querySelector(`[aria-label="フォロー中 @{user.userId}"]`);
                 if (followingButton) {{
                     return "already_following";
+                }}
+                // より柔軟な検索
+                const allButtons = document.querySelectorAll('button, [role="button"]');
+                for (let btn of allButtons) {{
+                    const ariaLabel = btn.getAttribute('aria-label') || '';
+                    console.log('Checking button:', ariaLabel);
+                    if (ariaLabel.includes('フォロー') && ariaLabel.includes('{user.userId}')) {{
+                        console.log('Found follow button:', ariaLabel);
+                        if (ariaLabel.includes('フォロー中')) {{
+                            return "already_following";
+                        }} else {{
+                            btn.click();
+                            return "followed";
+                        }}
+                    }}
                 }}
                 return "not_found";
             """)

@@ -41,10 +41,15 @@ export async function POST(request: Request) {
     // settingsオブジェクトにcurrentSendCountを追加
     const settingsWithCount = {
       ...settings,
-      currentSendCount
+      currentSendCount,
     };
 
-    const result = await handlePythonExecution(user, message, settingsWithCount, signal);
+    const result = await handlePythonExecution(
+      user,
+      message,
+      settingsWithCount,
+      signal
+    );
 
     return NextResponse.json(result);
   } catch (error) {
@@ -82,7 +87,7 @@ const handlePythonExecution = async (
       max: settings.interval.max,
       limit: settings.dailyLimit,
       followBeforeDM: settings.followBeforeDM,
-      currentSendCount: settings.currentSendCount
+      currentSendCount: settings.currentSendCount,
     });
 
     const process = spawn("python", [
@@ -93,7 +98,7 @@ const handlePythonExecution = async (
       settings.interval.max.toString(),
       settings.dailyLimit.toString(),
       settings.followBeforeDM.toString(),
-      settings.currentSendCount.toString()
+      settings.currentSendCount.toString(),
     ]);
 
     let outputData = "";

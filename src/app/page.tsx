@@ -326,6 +326,8 @@ export default function Home() {
     }
   };
 
+
+
   return (
     <Box sx={{ 
       display: 'flex', 
@@ -369,6 +371,7 @@ export default function Home() {
             >
               Chrome起動
             </Button>
+
           </Box>
 
           <Box sx={{ 

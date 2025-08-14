@@ -10,7 +10,8 @@
     "electron:dev": "npm run dev & sleep 5 && NODE_ENV=development electron .",
     "electron:build": "npm run build && electron-builder",
     "postinstall": "electron-builder install-app-deps",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sync-chromedriver": "node scripts/sync-chromedriver.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -24,7 +25,6 @@
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-slot": "^1.0.2",
     "@tanstack/react-table": "^8.13.2",
-    "chromedriver": "^134.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "csv-parse": "^5.6.0",
@@ -50,6 +50,7 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@types/selenium-webdriver": "^4.1.28",
+    "chromedriver": "^139.0.1",
     "electron": "^35.1.5",
     "electron-builder": "^26.0.12",
     "eslint": "^8.57.0",

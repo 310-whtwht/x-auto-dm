@@ -21,11 +21,24 @@ def main():
         chrome_options.add_argument('--disable-gpu')  # GPUエラーを防ぐ
         chrome_options.add_argument('--ignore-gpu-blocklist')  # GPU関連の警告を無視
         
-        # 既存のブラウザセッションに接続
-        chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+        # 既存のChromeセッションに接続を試行
+        print("既存のChromeセッションに接続を試行中...")
         
-        driver = webdriver.Chrome(options=chrome_options)
-        print("Connected to existing browser session")
+        # まず9222ポートでリモートデバッグに接続を試行
+        try:
+            chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+            
+            # ChromeDriverのパスを明示的に指定
+            chromedriver_path = os.path.join(os.path.dirname(__file__), "..", "node_modules", ".bin", "chromedriver")
+            service = Service(executable_path=chromedriver_path)
+            
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            print("既存のChromeセッションに接続しました")
+            
+        except Exception as e:
+            print(f"既存のChromeセッションへの接続に失敗: {e}")
+            print("Chromeをリモートデバッグモードで起動してください")
+            return
 
         try:
             # フォロワーページに直接移動

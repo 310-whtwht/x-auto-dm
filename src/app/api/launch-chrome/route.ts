@@ -32,14 +32,41 @@ async function isPortInUse(port: number): Promise<boolean> {
   }
 }
 
+// Chromeプロセスを終了する関数
+async function killChromeProcesses(): Promise<void> {
+  try {
+    await execAsync("pkill -f 'Google Chrome'");
+    console.log("既存のChromeプロセスを終了しました");
+  } catch (error) {
+    console.log("終了するChromeプロセスが見つかりませんでした");
+  }
+}
+
 export async function POST() {
   try {
-    // ポートの競合をチェック
     const port = 9222;
+
+    // 既存のChromeプロセスが9222ポートで動いているかチェック
+    if (await isPortInUse(port)) {
+      console.log("既存のChromeプロセスが9222ポートで動作中です");
+      return NextResponse.json({
+        success: true,
+        message: "既存のChromeセッションに接続可能です",
+        port: port,
+      });
+    }
+
+    // 既存のChromeプロセスを終了
+    await killChromeProcesses();
+
+    // 少し待機してからポートをチェック
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // ポートの競合をチェック
     if (await isPortInUse(port)) {
       return NextResponse.json(
         {
-          error: `ポート ${port} は既に使用中です。別のChromeインスタンスが実行中かもしれません。`,
+          error: `ポート ${port} は既に使用中です。別のプロセスが実行中かもしれません。`,
         },
         { status: 500 }
       );
@@ -47,18 +74,28 @@ export async function POST() {
 
     // Chromeのパスを検索
     const chromePath = await findChromePath();
-    const command = `"${chromePath}" --remote-debugging-port=${port}`;
 
-    // Chromeを起動
-    const { stdout, stderr } = await execAsync(command);
+    // プロジェクト固有のユーザーデータディレクトリを使用
+    const userDataDir = "./chrome-profile-with-login";
 
-    if (stderr) {
-      console.error("Chrome起動エラー:", stderr);
-      return NextResponse.json(
-        { error: `Chromeの起動中にエラーが発生しました: ${stderr}` },
-        { status: 500 }
-      );
-    }
+    // headlessモードの設定（環境変数で制御、デフォルトはfalse）
+    const headless = process.env.CHROME_HEADLESS === "true";
+    const headlessArg = headless ? "--headless" : "";
+
+    const command = `"${chromePath}" --remote-debugging-port=${port} --user-data-dir="${userDataDir}" ${headlessArg} --no-first-run --no-default-browser-check`;
+
+    // Chromeをバックグラウンドで起動
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error("Chrome起動エラー:", error);
+      }
+      if (stderr) {
+        console.error("Chrome起動エラー:", stderr);
+      }
+    });
+
+    // Chromeの起動を待機
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     return NextResponse.json({
       success: true,

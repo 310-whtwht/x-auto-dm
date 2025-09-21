@@ -71,42 +71,7 @@ else
     log_success "Homebrewは既にインストールされています"
 fi
 
-# 2. pyenvのインストール確認・インストール
-log_info "pyenvの確認中..."
-if ! command -v pyenv &> /dev/null; then
-    log_info "pyenvをインストール中..."
-    brew install pyenv
-    
-    # pyenvの初期化設定
-    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$SHELL_RC"
-    echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> "$SHELL_RC"
-    echo 'eval "$(pyenv init -)"' >> "$SHELL_RC"
-    
-    # 現在のシェルセッション用
-    export PYENV_ROOT="$HOME/.pyenv"
-    export PATH="$PYENV_ROOT/bin:$PATH"
-    eval "$(pyenv init -)"
-    
-    log_success "pyenvのインストールが完了しました"
-else
-    log_success "pyenvは既にインストールされています"
-fi
-
-# 3. Python 3.11のインストール・設定
-log_info "Python 3.11の確認中..."
-if ! pyenv versions | grep -q "3.11"; then
-    log_info "Python 3.11をインストール中..."
-    pyenv install 3.11.2
-    log_success "Python 3.11のインストールが完了しました"
-else
-    log_success "Python 3.11は既にインストールされています"
-fi
-
-# プロジェクトディレクトリでPython 3.11を使用
-log_info "プロジェクト用のPython環境を設定中..."
-pyenv local 3.11.2
-
-# 4. Node.jsのインストール確認・インストール
+# 2. Node.jsのインストール確認・インストール
 log_info "Node.jsの確認中..."
 if ! command -v node &> /dev/null; then
     log_info "Node.jsをインストール中..."
@@ -116,7 +81,7 @@ else
     log_success "Node.jsは既にインストールされています"
 fi
 
-# 5. Google Chromeのインストール確認
+# 3. Google Chromeのインストール確認
 log_info "Google Chromeの確認中..."
 if ! ls /Applications/Google\ Chrome.app &> /dev/null; then
     log_warning "Google Chromeがインストールされていません"
@@ -132,19 +97,26 @@ else
     log_success "Google Chromeは既にインストールされています"
 fi
 
-# 6. Python依存関係のインストール
-log_info "Python依存関係をインストール中..."
-pip install -r requirements.txt
+# 4. Node.js依存関係のクリーンアップとインストール
+log_info "Node.js依存関係のクリーンアップ中..."
+if [ -d "node_modules" ]; then
+    log_info "既存のnode_modulesを削除中..."
+    rm -rf node_modules
+fi
 
-# 7. Node.js依存関係のインストール
+if [ -f "package-lock.json" ]; then
+    log_info "既存のpackage-lock.jsonを削除中..."
+    rm -f package-lock.json
+fi
+
 log_info "Node.js依存関係をインストール中..."
 npm install
 
-# 8. ChromeDriverの同期
+# 5. ChromeDriverの同期
 log_info "ChromeDriverを同期中..."
 npm run sync-chromedriver
 
-# 9. 環境変数の設定
+# 6. 環境変数の設定
 log_info "環境変数を設定中..."
 if [ ! -f .env.local ]; then
     cat > .env.local << EOF
@@ -157,11 +129,15 @@ else
     log_success ".env.localファイルは既に存在します"
 fi
 
-# 10. 権限の設定
-log_info "スクリプトに実行権限を付与中..."
-chmod +x scripts/*.py
+# 7. 権限の設定（必要に応じて）
+log_info "スクリプトの権限確認中..."
+if [ -d "scripts" ]; then
+    log_info "scriptsディレクトリ内の実行可能ファイルに権限を付与中..."
+    find scripts -type f -name "*.sh" -exec chmod +x {} \;
+    find scripts -type f -name "*.js" -exec chmod +x {} \;
+fi
 
-# 11. 完了メッセージ
+# 8. 完了メッセージ
 echo ""
 log_success " 環境構築が完了しました！"
 echo ""
@@ -177,10 +153,9 @@ echo "2. 'npm run dev' でアプリケーションを起動"
 echo "3. ブラウザで http://localhost:3000 にアクセス"
 echo "4. アプリ内でXログイン情報を設定"
 echo ""
-echo " トラブルシューティング："
+echo "📋 トラブルシューティング："
 echo "- ChromeDriverのバージョンが合わない場合: npm run sync-chromedriver"
-echo "- Python環境の問題: pyenv local 3.11.9"
-echo "- 依存関係の問題: npm install && pip install -r requirements.txt"
+echo "- 依存関係の問題: rm -rf node_modules package-lock.json && npm install"
 echo "- ARM MacでHomebrewが見つからない場合: /opt/homebrew/bin/brew を確認"
 echo ""
 log_success "環境構築スクリプトが正常に完了しました！"

@@ -2,6 +2,7 @@
   "name": "x-auto-dm",
   "version": "1.0.0",
   "description": "X Auto DM - フォロワーへの自動DM送信ツール",
+  "author": "X Auto DM Team",
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
@@ -9,12 +10,15 @@
     "start": "next start",
     "electron:dev": "npm run dev & sleep 5 && NODE_ENV=development electron .",
     "electron:build": "npm run build && electron-builder",
-    "postinstall": "electron-builder install-app-deps",
     "lint": "next lint",
     "sync-chromedriver": "node scripts/sync-chromedriver.js",
     "setup": "chmod +x setup.sh && ./setup.sh"
   },
   "dependencies": {
+    "fs-extra": "^11.3.0",
+    "playwright-core": "^1.55.0"
+  },
+  "devDependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@fontsource/ibm-plex-sans-jp": "^5.2.5",
@@ -31,19 +35,15 @@
     "csv-parse": "^5.6.0",
     "csv-stringify": "^6.5.2",
     "dayjs": "^1.11.13",
-    "fs-extra": "^11.3.0",
     "idb": "^8.0.0",
     "lucide-react": "^0.344.0",
-    "next": "^14.2.24",
     "papaparse": "^5.5.2",
     "puppeteer": "^22.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-number-format": "^5.4.4",
     "selenium-webdriver": "^4.29.0",
-    "tailwind-merge": "^2.2.1"
-  },
-  "devDependencies": {
+    "tailwind-merge": "^2.2.1",
     "@types/chromedriver": "^81.0.5",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^20.11.25",
@@ -57,6 +57,7 @@
     "electron-builder": "^26.0.12",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.1.3",
+    "next": "^14.2.32",
     "typescript": "^5.4.2"
   },
   "build": {
@@ -85,8 +86,27 @@
     "files": [
       "out/**/*",
       "electron/**/*",
-      "node_modules/**/*",
+      "src/lib/**/*",
+      "node_modules/playwright-core/**/*",
+      ".next/standalone/**/*",
+      ".next/static/**/*",
+      "public/**/*",
+      "!node_modules/fsevents/**",
       "package.json"
+    ],
+    "asar": true,
+    "extraResources": [
+      {
+        "from": "src/lib",
+        "to": "lib"
+      }
+    ],
+    "buildDependenciesFromSource": false,
+    "nodeGypRebuild": false,
+    "npmRebuild": false,
+    "asarUnpack": [
+      "node_modules/playwright/**/*",
+      ".next/**/*"
     ]
   }
 }

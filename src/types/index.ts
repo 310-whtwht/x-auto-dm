@@ -28,3 +28,45 @@ export interface Stats {
   error: number;
   followed: number;
 }
+
+// Electron API の型定義
+declare global {
+  interface Window {
+    electron: {
+      getDesktopPath: () => string;
+      invoke: (channel: string, data?: any) => Promise<any>;
+      send: (channel: string, data?: any) => void;
+      on: (channel: string, func: (...args: any[]) => void) => () => void;
+      platform: string;
+      getSettings: () => Promise<any>;
+      setSettings: (settings: any) => Promise<boolean>;
+      getChromePath: () => Promise<string>;
+      setChromePath: (chromePath: string) => Promise<boolean>;
+      scrapeFollowers: (
+        targetUsername: string,
+        customUrl?: string
+      ) => Promise<{
+        success: boolean;
+        followers?: any[];
+        csvPath?: string;
+        count?: number;
+        error?: string;
+      }>;
+      sendDM: (
+        user: User,
+        message: string,
+        settings: {
+          minInterval: number;
+          maxInterval: number;
+          dailyLimit: number;
+          followBeforeDM: boolean;
+          currentSendCount: number;
+        }
+      ) => Promise<{
+        success: boolean;
+        error: string;
+        status: string;
+      }>;
+    };
+  }
+}

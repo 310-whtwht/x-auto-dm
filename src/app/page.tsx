@@ -59,23 +59,45 @@ export default function Home() {
 
     try {
       setIsLoading(true);
-      const response = await fetch("/api/extract", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url: settings.followerUrl }),
-      });
-
-      const data = await response.json();
+      setLogs((prev) => [...prev, "フォロワー情報の抽出を開始します..."]);
       
-      if (data.success) {
-        setLogs((prev) => [...prev, "フォロワー情報の抽出が完了しました"]);
-        if (data.output) {
-          setLogs((prev) => [...prev, data.output]);
+      // URLからユーザー名を抽出（様々なX.comページに対応）
+      const urlMatch = settings.followerUrl.match(/(?:x\.com|twitter\.com)\/([^\/]+)/);
+      if (!urlMatch) {
+        setLogs((prev) => [...prev, "無効なURLです。x.comまたはtwitter.comのURLを入力してください。"]);
+        return;
+      }
+      
+      const targetUsername = urlMatch[1];
+      setLogs((prev) => [...prev, `対象ユーザー: ${targetUsername}`]);
+      setLogs((prev) => [...prev, `対象URL: ${settings.followerUrl}`]);
+      
+      // ElectronのIPCを使用してフォロワー取得（URLを直接渡す）
+      if (typeof window !== 'undefined' && window.electron) {
+        const result = await window.electron.scrapeFollowers(targetUsername, settings.followerUrl);
+        
+        if (result.success) {
+          setLogs((prev) => [...prev, `フォロワー情報の抽出が完了しました (${result.count}件)`]);
+          setLogs((prev) => [...prev, `CSVファイルが保存されました: ${result.csvPath}`]);
+          
+          // 取得したフォロワーをユーザーリストに追加
+          const users = (result.followers || []).map((follower: any, index: number) => ({
+            uniqueId: `follower_${index}_${Date.now()}`,
+            userId: follower.id,
+            name: follower.username,
+            nickname: follower.nickname,
+            profile: follower.profile,
+            status: "pending" as const,
+            isSend: false,
+          }));
+          
+          await addUsers(users);
+          setLogs((prev) => [...prev, `${users.length}件のユーザーを追加しました`]);
+        } else {
+          setLogs((prev) => [...prev, `エラー: ${result.error}`]);
         }
       } else {
-        setLogs((prev) => [...prev, `エラー: ${data.error}`]);
+        setLogs((prev) => [...prev, "Electron環境で実行してください"]);
       }
     } catch (error) {
       console.error("抽出エラー:", error);
@@ -158,42 +180,35 @@ export default function Home() {
             Math.floor(Math.random() * settings.messages.length)
           ];
 
-          const response = await fetch("/api/send-dm", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              user: currentUser,
-              message: messageTemplate,
-              settings: {
-                interval: {
-                  min: settings.interval.min,
-                  max: settings.interval.max
-                },
+          // ElectronのIPCを使用してDM送信
+          if (typeof window !== 'undefined' && window.electron) {
+            const data = await window.electron.sendDM(
+              currentUser,
+              messageTemplate,
+              {
+                minInterval: settings.interval.min,
+                maxInterval: settings.interval.max,
                 dailyLimit: settings.dailyLimit,
-                followBeforeDM: settings.followBeforeDM
-              },
-              currentSendCount: dailySendCount
-            }),
-            signal: abortControllerRef.current.signal
-          });
-
-          const data = await response.json();
+                followBeforeDM: settings.followBeforeDM,
+                currentSendCount: dailySendCount
+              }
+            );
           
-          if (data.success) {
-            dailySendCount++;
-            localStorage.setItem('dailySendCount', dailySendCount.toString());
-            setLogs(prev => [
-              ...prev, 
-              `${userId} へのDM送信が成功しました`,
-              `残り送信可能数: ${settings.dailyLimit - dailySendCount}件`
-            ]);
-            await updateUser(currentUser.uniqueId, { status: data.status });
+            if (data.success) {
+              dailySendCount++;
+              localStorage.setItem('dailySendCount', dailySendCount.toString());
+              setLogs(prev => [
+                ...prev, 
+                `${userId} へのDM送信が成功しました`,
+                `残り送信可能数: ${settings.dailyLimit - dailySendCount}件`
+              ]);
+              await updateUser(currentUser.uniqueId, { status: data.status as "pending" | "followed" | "success" | "error" });
+            } else {
+              setLogs(prev => [...prev, `${userId}: ${data.error}`]);
+              await updateUser(currentUser.uniqueId, { status: data.status as "pending" | "followed" | "success" | "error" });
+            }
           } else {
-            // throw new Error(data.error || "DM送信に失敗しました");
-            setLogs(prev => [...prev, `${userId}: ${data.error}`]);
-            await updateUser(currentUser.uniqueId, { status: data.status });
+            setLogs(prev => [...prev, "Electron環境で実行してください"]);
           }
 
           await new Promise(resolve => setTimeout(resolve, 2000));

@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: "export",
+  output: "standalone",
   images: {
     unoptimized: true,
   },
-  basePath: process.env.NODE_ENV === "production" ? "" : "",
-  assetPrefix: process.env.NODE_ENV === "production" ? "./" : "",
+  basePath: "",
+  assetPrefix: "",
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -16,6 +16,14 @@ const nextConfig = {
       };
     }
     return config;
+  },
+  // TypeScriptの設定
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  // ESLintの設定
+  eslint: {
+    ignoreDuringBuilds: false,
   },
 };
 

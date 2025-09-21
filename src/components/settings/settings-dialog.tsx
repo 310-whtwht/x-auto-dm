@@ -23,6 +23,7 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { NumericFormat } from "react-number-format";
 import { Settings } from "@/types";
 import { useState, useEffect } from "react";
+import { FolderOpen } from "@mui/icons-material";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -143,7 +144,7 @@ export function SettingsDialog({
     setUrlError(""); // エラーをクリア
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (validateSettings()) {
       onSave(localSettings);
       onOpenChange(false);
@@ -185,7 +186,7 @@ export function SettingsDialog({
                 <TextField
                   fullWidth
                   label="フォロワーURL"
-                  placeholder="https://x.com/{username}/followers"
+                  placeholder="https://x.com/{username}/followers または https://x.com/{username}/following など"
                   value={localSettings.followerUrl}
                   onChange={handleUrlChange}
                 />

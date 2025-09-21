@@ -401,14 +401,14 @@ class DMSender {
       console.log(`エラーが発生しました: ${errorMessage}`);
       return { success: false, error: errorMessage, status: "error" };
     } finally {
-      // Pythonコードと同じ：処理後にブラウザセッションを終了
-      if (browser) {
-        try {
-          await browser.close();
-        } catch (error) {
-          console.error("ブラウザ終了エラー:", error);
-        }
-      }
+      // ブラウザセッションは終了しない（既存のChromeセッションを維持）
+      // if (browser) {
+      //   try {
+      //     await browser.close();
+      //   } catch (error) {
+      //     console.error("ブラウザ終了エラー:", error);
+      //   }
+      // }
     }
   }
 
@@ -427,6 +427,63 @@ class DMSender {
       console.error("ブラウザ終了エラー:", error);
     }
   }
+}
+
+// コマンドライン実行時の処理
+if (require.main === module) {
+  const dmSender = new DMSender();
+
+  async function main() {
+    try {
+      const userJson = process.argv[2];
+      const message = process.argv[3];
+      const minInterval = parseInt(process.argv[4]);
+      const maxInterval = parseInt(process.argv[5]);
+      const dailyLimit = parseInt(process.argv[6]);
+      const followBeforeDM = process.argv[7] === "true";
+      const currentSendCount = parseInt(process.argv[8]);
+
+      if (!userJson || !message) {
+        console.error("必要なパラメータが不足しています");
+        process.exit(1);
+      }
+
+      const user = JSON.parse(userJson);
+      const settings = {
+        minInterval,
+        maxInterval,
+        dailyLimit,
+        followBeforeDM,
+        currentSendCount,
+      };
+
+      console.log(`DM送信開始: ${user.userId}`);
+      console.log(`メッセージ: ${message}`);
+
+      await dmSender.launch();
+      const result = await dmSender.sendDM(user, message, settings);
+
+      // 結果をJSON形式で出力
+      console.log(JSON.stringify(result));
+
+      // Pythonスクリプトと同様に、成功時は0、失敗時は1で終了
+      process.exit(result.success ? 0 : 1);
+    } catch (error) {
+      console.error("エラーが発生しました:", error);
+      const errorResult = {
+        success: false,
+        error: error.message,
+        status: "error",
+      };
+      console.log(JSON.stringify(errorResult));
+      process.exit(1);
+    } finally {
+      // ブラウザセッションは終了しない（既存のChromeセッションを維持）
+      // await dmSender.close();
+    }
+  }
+
+  main();
 }
 
 module.exports = DMSender;

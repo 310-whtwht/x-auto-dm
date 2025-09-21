@@ -259,4 +259,56 @@ class FollowerScraper {
   }
 }
 
+// コマンドライン実行時の処理
+if (require.main === module) {
+  const scraper = new FollowerScraper();
+
+  async function main() {
+    try {
+      const targetUsername = process.argv[2];
+      const customUrl = process.argv[3];
+
+      if (!targetUsername) {
+        console.error("ユーザー名が指定されていません");
+        process.exit(1);
+      }
+
+      console.log(`フォロワー取得開始: ${targetUsername}`);
+      console.log(`カスタムURL: ${customUrl || "なし"}`);
+
+      await scraper.launch();
+      const followers = await scraper.scrapeFollowers(
+        targetUsername,
+        customUrl
+      );
+      const csvPath = await scraper.saveToCSV(followers);
+
+      // 結果をJSON形式で出力
+      const result = {
+        success: true,
+        followers: followers,
+        count: followers.length,
+        csvPath: csvPath,
+      };
+
+      console.log(JSON.stringify(result));
+    } catch (error) {
+      console.error("エラーが発生しました:", error);
+      const errorResult = {
+        success: false,
+        error: error.message,
+        followers: [],
+        count: 0,
+        csvPath: "",
+      };
+      console.log(JSON.stringify(errorResult));
+      process.exit(1);
+    } finally {
+      await scraper.close();
+    }
+  }
+
+  main();
+}
+
 module.exports = FollowerScraper;

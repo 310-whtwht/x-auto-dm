@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       currentSendCount,
     };
 
-    const result = await handlePythonExecution(
+    const result = await handleJavaScriptExecution(
       user,
       message,
       settingsWithCount,
@@ -72,15 +72,15 @@ export async function POST(request: Request) {
   }
 }
 
-const handlePythonExecution = async (
+const handleJavaScriptExecution = async (
   user: User,
   message: string,
   settings: any,
   signal?: AbortSignal
 ) => {
   return new Promise((resolve, reject) => {
-    // Python実行時のパラメータをログ出力
-    console.log("Python実行パラメータ:", {
+    // JavaScript実行時のパラメータをログ出力
+    console.log("JavaScript実行パラメータ:", {
       user: JSON.stringify(user),
       message,
       min: settings.interval.min,
@@ -90,8 +90,10 @@ const handlePythonExecution = async (
       currentSendCount: settings.currentSendCount,
     });
 
-    const process = spawn("python", [
-      "scripts/send_dm.py",
+    // JavaScriptスクリプトを実行
+    const scriptPath = path.join(process.cwd(), "src", "lib", "dmSender.js");
+    const childProcess = spawn("node", [
+      scriptPath,
       JSON.stringify(user),
       message,
       settings.interval.min.toString(),
@@ -104,17 +106,17 @@ const handlePythonExecution = async (
     let outputData = "";
     let errorData = "";
 
-    process.stdout.on("data", (data) => {
+    childProcess.stdout.on("data", (data) => {
       outputData += data.toString();
-      console.log("Python stdout:", data.toString());
+      console.log("JavaScript stdout:", data.toString());
     });
 
-    process.stderr.on("data", (data) => {
+    childProcess.stderr.on("data", (data) => {
       errorData += data.toString();
-      console.log("Python stderr:", data.toString());
+      console.log("JavaScript stderr:", data.toString());
     });
 
-    process.on("close", (code) => {
+    childProcess.on("close", (code) => {
       console.log("Process output:", outputData);
       console.log("Process error:", errorData);
       console.log("Exit code:", code);
@@ -136,7 +138,7 @@ const handlePythonExecution = async (
         console.error("JSON parse error:", e);
         resolve({
           success: false,
-          error: `Failed to parse Python output: ${outputData}\nError: ${errorData}`,
+          error: `Failed to parse JavaScript output: ${outputData}\nError: ${errorData}`,
           status: "error",
         });
       }
@@ -144,7 +146,7 @@ const handlePythonExecution = async (
 
     if (signal) {
       signal.addEventListener("abort", () => {
-        process.kill();
+        childProcess.kill();
         reject(new Error("Operation cancelled"));
       });
     }

@@ -5,7 +5,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { DataTable } from "@/components/ui/data-table";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
-import { extractUsers, handleLaunchChrome } from "./actions";
+// actions.tsは削除されたため、IPC呼び出しを直接使用
 import { getRandomMessage, getRandomInterval, sleep } from "@/lib/utils";
 import {
   Box,
@@ -72,19 +72,8 @@ export default function Home() {
       setLogs((prev) => [...prev, `対象ユーザー: ${targetUsername}`]);
       setLogs((prev) => [...prev, `対象URL: ${settings.followerUrl}`]);
       
-      // APIエンドポイントを使用してフォロワー取得
-      const response = await fetch('/api/scrape-followers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: targetUsername,
-          url: settings.followerUrl,
-        }),
-      });
-
-      const result = await response.json();
+      // IPCを使用してフォロワー取得
+      const result = await window.electron.scrapeFollowers(targetUsername, settings.followerUrl);
       
       if (result.success) {
         setLogs((prev) => [...prev, `フォロワー情報の抽出が完了しました (${result.count}件)`]);
@@ -187,28 +176,15 @@ export default function Home() {
             Math.floor(Math.random() * settings.messages.length)
           ];
 
-          // APIエンドポイントを使用してDM送信
-          const response = await fetch('/api/send-dm', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+          // IPCを使用してDM送信
+          const data = await window.electron.sendDM(currentUser, messageTemplate, {
+            interval: {
+              min: settings.interval.min,
+              max: settings.interval.max,
             },
-            body: JSON.stringify({
-              user: currentUser,
-              message: messageTemplate,
-              settings: {
-                interval: {
-                  min: settings.interval.min,
-                  max: settings.interval.max,
-                },
-                dailyLimit: settings.dailyLimit,
-                followBeforeDM: settings.followBeforeDM,
-              },
-              currentSendCount: dailySendCount,
-            }),
+            dailyLimit: settings.dailyLimit,
+            followBeforeDM: settings.followBeforeDM,
           });
-
-          const data = await response.json();
         
           if (data.success) {
             dailySendCount++;
@@ -348,7 +324,7 @@ export default function Home() {
 
   const launchChromeHandler = async () => {
     try {
-      const result = await handleLaunchChrome();
+      const result = await window.electron.invoke('launch-chrome');
       if (result.success) {
         setLogs(prev => [...prev, "Chromeの起動に成功しました"]);
       } else {

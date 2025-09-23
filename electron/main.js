@@ -21,7 +21,7 @@ async function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
-      webSecurity: true,
+      webSecurity: false, // file://プロトコルでのリソース読み込みを許可
       allowRunningInsecureContent: false,
     },
     // ウィンドウオプションを追加
@@ -37,75 +37,53 @@ async function createWindow() {
     mainWindow.loadURL("http://localhost:3000");
     mainWindow.webContents.openDevTools();
   } else {
-    // 本番環境ではNext.js standalone サーバーを起動して接続
-    const PORT = process.env.PORT || "3210";
-    const appRoot = path.join(__dirname, "..");
-    const serverDir = path.join(appRoot, ".next", "standalone");
-    const serverPath = path.join(serverDir, "server.js");
+    // 本番環境では静的ファイルを配信
+    // Electron-builderでは、アプリは Contents/Resources/app/ に配置される
+    const appRoot = process.resourcesPath || path.join(__dirname, "..");
+    const staticPath = path.join(appRoot, "app", "out", "index.html");
+
+    // デバッグ情報を出力（開発時のみ）
+    console.log("[Main] Loading static files from:", staticPath);
 
     try {
-      process.env.NODE_ENV = "production";
-      process.env.PORT = PORT;
-      // Next のスタンドアロンサーバは `.next/standalone` をCWDとして想定
-      process.chdir(serverDir);
-      // server.js を読み込むとHTTPサーバーが起動する（standalone 出力）
-      // 同一プロセスで起動するため追加プロセスは不要
-      // eslint-disable-next-line import/no-dynamic-require, global-require
-      console.log("[Main] Starting Next standalone server:", serverPath);
-      require(serverPath);
-      console.log(
-        "[Main] Next server required. Waiting for readiness on",
-        PORT
-      );
-      // サーバーの起動を待ってから読み込み
-      await new Promise((resolve, reject) => {
-        const start = Date.now();
-        const timeoutMs = 20000;
-        const intervalMs = 250;
-        const url = `http://127.0.0.1:${PORT}/`;
-        const attempt = () => {
-          const req = http.get(url, (res) => {
-            if (res.statusCode >= 200 && res.statusCode < 400) {
-              res.resume();
-              resolve();
-            } else if (Date.now() - start > timeoutMs) {
-              res.resume();
-              reject(new Error(`Server not ready. Status: ${res.statusCode}`));
-            } else {
-              res.resume();
-              setTimeout(attempt, intervalMs);
-            }
-          });
-          req.on("error", () => {
-            if (Date.now() - start > timeoutMs) {
-              reject(new Error("Server did not start in time"));
-            } else {
-              setTimeout(attempt, intervalMs);
-            }
-          });
-        };
-        attempt();
-      });
-      mainWindow.loadURL(`http://127.0.0.1:${PORT}`);
-      console.log("[Main] Loaded renderer URL:", `http://127.0.0.1:${PORT}`);
-    } catch (e) {
-      console.error("[Main] Failed to start Next standalone server:", e);
-      mainWindow.webContents.openDevTools();
-      // フォールバック: 静的エクスポートが同梱されている場合のみ読み込む
-      try {
-        const fallbackPath = path.join(appRoot, "out", "index.html");
-        if (fs.existsSync(fallbackPath)) {
-          console.warn("[Main] Falling back to out/index.html:", fallbackPath);
-          mainWindow.loadFile(fallbackPath);
-        } else {
-          console.error(
-            "[Main] Fallback out/index.html not found at:",
-            fallbackPath
-          );
+      if (fs.existsSync(staticPath)) {
+        // file://プロトコルで絶対パスを使用して静的ファイルを読み込み
+        const fileUrl = `file://${staticPath}`;
+        console.log("[Main] Loading URL:", fileUrl);
+        mainWindow.loadURL(fileUrl);
+        console.log("[Main] Loaded static file successfully");
+      } else {
+        console.error("[Main] Static file not found at:", staticPath);
+        console.error("[Main] Trying alternative paths...");
+
+        // 代替パスを試す
+        const altPaths = [
+          path.join(appRoot, "app", "out", "index.html"),
+          path.join(appRoot, "out", "index.html"),
+          path.join(__dirname, "..", "app", "out", "index.html"),
+          path.join(__dirname, "out", "index.html"),
+          path.join(process.resourcesPath, "app", "out", "index.html"),
+          path.join(process.resourcesPath, "out", "index.html"),
+        ];
+
+        for (const altPath of altPaths) {
+          console.log("[Main] Trying path:", altPath);
+          if (fs.existsSync(altPath)) {
+            console.log("[Main] Found alternative path:", altPath);
+            const fileUrl = `file://${altPath}`;
+            mainWindow.loadURL(fileUrl);
+            return;
+          }
         }
-      } catch (e2) {
-        console.error("[Main] Failed to load fallback out/index.html:", e2);
+
+        console.error(
+          "[Main] No valid static file found - opening DevTools for debugging"
+        );
+        mainWindow.webContents.openDevTools();
       }
+    } catch (e) {
+      console.error("[Main] Failed to load static file:", e);
+      mainWindow.webContents.openDevTools();
     }
   }
 
@@ -210,3 +188,142 @@ ipcMain.handle(
     // 注意：sender.close()は不要（sendDM内のfinallyブロックで自動的に処理される）
   }
 );
+
+// Chrome起動のIPCハンドラー
+ipcMain.handle("launch-chrome", async () => {
+  try {
+    const { exec } = require("child_process");
+    const path = require("path");
+    const fs = require("fs");
+
+    const port = 9222;
+
+    // 既存のChromeプロセスを終了
+    console.log("既存のChromeプロセスを終了中...");
+    try {
+      await new Promise((resolve, reject) => {
+        exec("pkill -f chrome", (error) => {
+          if (error && !error.message.includes("No matching processes")) {
+            console.log("Chromeプロセス終了:", error.message);
+          }
+          resolve();
+        });
+      });
+    } catch (error) {
+      console.log("Chromeプロセス終了エラー:", error.message);
+    }
+
+    // ChromeDriverプロセスも終了
+    try {
+      await new Promise((resolve, reject) => {
+        exec("pkill -f chromedriver", (error) => {
+          if (error && !error.message.includes("No matching processes")) {
+            console.log("ChromeDriverプロセス終了:", error.message);
+          }
+          resolve();
+        });
+      });
+    } catch (error) {
+      console.log("ChromeDriverプロセス終了エラー:", error.message);
+    }
+
+    // 少し待機してからポートをチェック
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
+    // Chromeのパスを検索
+    const findChromePath = async () => {
+      const possiblePaths = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser",
+      ];
+
+      for (const chromePath of possiblePaths) {
+        if (fs.existsSync(chromePath)) {
+          return chromePath;
+        }
+      }
+      throw new Error("Chromeが見つかりません");
+    };
+
+    const chromePath = await findChromePath();
+
+    // Chromeプロファイルの絶対パスを設定
+    // 開発環境ではプロジェクトルート、本番環境ではアプリの実行ディレクトリを基準とする
+    const appPath = isDev ? process.cwd() : path.dirname(process.execPath);
+    const userDataDir = path.join(appPath, "chrome-profile-with-login");
+
+    // プロファイルディレクトリが存在しない場合は作成
+    if (!fs.existsSync(userDataDir)) {
+      fs.mkdirSync(userDataDir, { recursive: true });
+
+      // 既存のプロファイルがある場合はコピー
+      const oldProfilePath = path.join(
+        process.cwd(),
+        "chrome-profile-with-login"
+      );
+      if (fs.existsSync(oldProfilePath) && oldProfilePath !== userDataDir) {
+        console.log("[Chrome] Copying existing profile from:", oldProfilePath);
+        try {
+          // プロファイルの内容をコピー
+          const copyRecursive = (src, dest) => {
+            const stats = fs.statSync(src);
+            if (stats.isDirectory()) {
+              if (!fs.existsSync(dest)) {
+                fs.mkdirSync(dest, { recursive: true });
+              }
+              const files = fs.readdirSync(src);
+              files.forEach((file) => {
+                copyRecursive(path.join(src, file), path.join(dest, file));
+              });
+            } else {
+              fs.copyFileSync(src, dest);
+            }
+          };
+          copyRecursive(oldProfilePath, userDataDir);
+          console.log("[Chrome] Profile copied successfully");
+        } catch (error) {
+          console.log("[Chrome] Failed to copy profile:", error.message);
+        }
+      }
+    }
+
+    // デバッグ情報を出力
+    console.log("[Chrome] App path:", appPath);
+    console.log("[Chrome] User data directory:", userDataDir);
+    console.log("[Chrome] Directory exists:", fs.existsSync(userDataDir));
+
+    const headless = process.env.CHROME_HEADLESS === "true";
+    const headlessArg = headless ? "--headless" : "";
+
+    const command = `"${chromePath}" --remote-debugging-port=${port} --user-data-dir="${userDataDir}" ${headlessArg} --no-first-run --no-default-browser-check`;
+
+    console.log("[Chrome] Command:", command);
+
+    // Chromeをバックグラウンドで起動
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error("Chrome起動エラー:", error);
+      }
+      if (stderr) {
+        console.error("Chrome起動エラー:", stderr);
+      }
+    });
+
+    // Chromeの起動を待機
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    return {
+      success: true,
+      message: "デバッグモードでChromeを起動しました",
+      path: chromePath,
+    };
+  } catch (error) {
+    console.error("Chrome起動エラー:", error);
+    return {
+      success: false,
+      error: `Chromeの起動に失敗しました: ${error.message}`,
+    };
+  }
+});

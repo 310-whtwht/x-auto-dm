@@ -56,15 +56,16 @@ declare global {
         user: User,
         message: string,
         settings: {
-          minInterval: number;
-          maxInterval: number;
+          interval: {
+            min: number;
+            max: number;
+          };
           dailyLimit: number;
           followBeforeDM: boolean;
-          currentSendCount: number;
         }
       ) => Promise<{
         success: boolean;
-        error: string;
+        error?: string;
         status: string;
       }>;
     };

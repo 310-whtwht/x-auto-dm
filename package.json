@@ -5,11 +5,11 @@
   "author": "X Auto DM Team",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "next:dev": "next dev",
+    "next:build": "next build",
     "start": "next start",
-    "electron:dev": "npm run dev & sleep 5 && NODE_ENV=development electron .",
-    "electron:build": "npm run build && electron-builder",
+    "dev": "npm run next:dev & sleep 5 && NODE_ENV=development electron .",
+    "build": "npm run next:build && electron-builder",
     "lint": "next lint",
     "sync-chromedriver": "node scripts/sync-chromedriver.js",
     "setup": "chmod +x setup.sh && ./setup.sh"
@@ -88,13 +88,12 @@
       "electron/**/*",
       "src/lib/**/*",
       "node_modules/playwright-core/**/*",
-      ".next/standalone/**/*",
-      ".next/static/**/*",
       "public/**/*",
       "!node_modules/fsevents/**",
+      "!out/_next/static/chunks/pages/**",
       "package.json"
     ],
-    "asar": true,
+    "asar": false,
     "extraResources": [
       {
         "from": "src/lib",
@@ -105,8 +104,7 @@
     "nodeGypRebuild": false,
     "npmRebuild": false,
     "asarUnpack": [
-      "node_modules/playwright/**/*",
-      ".next/**/*"
+      "node_modules/playwright/**/*"
     ]
   }
 }

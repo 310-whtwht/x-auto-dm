@@ -23,7 +23,6 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { NumericFormat } from "react-number-format";
 import { Settings } from "@/types";
 import { useState, useEffect } from "react";
-import { FolderOpen } from "@mui/icons-material";
 
 interface SettingsDialogProps {
   open: boolean;
@@ -42,7 +41,7 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const [localSettings, setLocalSettings] = useState<Settings>(settings);
   const [errors, setErrors] = useState<string[]>([]);
-  const [urlError, setUrlError] = useState<string>("");
+  // const [urlError, setUrlError] = useState<string>("");
 
   useEffect(() => {
     setLocalSettings(settings);
@@ -141,7 +140,7 @@ export function SettingsDialog({
       ...localSettings,
       followerUrl: newUrl,
     });
-    setUrlError(""); // エラーをクリア
+    // setUrlError(""); // エラーをクリア
   };
 
   const handleSave = async () => {

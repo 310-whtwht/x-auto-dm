@@ -3,7 +3,6 @@
 import { User } from "@/types";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { Checkbox, Box, Tooltip, Typography, Link } from "@mui/material";
-import { useState } from "react";
 
 interface DataTableProps {
   data: User[];

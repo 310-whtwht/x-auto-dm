@@ -5,8 +5,6 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { DataTable } from "@/components/ui/data-table";
 import { SettingsDialog } from "@/components/settings/settings-dialog";
-// actions.tsは削除されたため、IPC呼び出しを直接使用
-import { getRandomMessage, getRandomInterval, sleep } from "@/lib/utils";
 import {
   Box,
   Button,
@@ -20,7 +18,6 @@ import {
 } from "@mui/material";
 import { useSettings } from "@/hooks/use-settings";
 import { useUsers } from "@/hooks/use-users";
-import { User } from "@/types";
 import { LogArea } from "@/components/log-area";
 import { 
   Settings as SettingsIcon,
@@ -38,18 +35,11 @@ export default function Home() {
   const { users, stats, updateUser, addUsers, clearAllUsers } = useUsers();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [shouldStop, setShouldStop] = useState(false);
-  const [searchMode, setSearchMode] = useState<"exact" | "partial">("exact");
-  const [keywords, setKeywords] = useState<string[]>([]);
   const [logs, setLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  const addLogs = (newLogs: string[]) => {
-    setLogs((prev) => [...prev, ...newLogs]);
-  };
 
   const handleExtract = async () => {
     if (!settings.followerUrl) {
@@ -245,53 +235,6 @@ export default function Home() {
     }
   }
 
-  const handleDebug = () => {
-    const debugUsers: User[] = [
-      {
-        uniqueId: "user1",
-        userId: "user1",
-        name: "山田太郎（営業部）",
-        nickname: "山田太郎",
-        profile:
-          "営業部で10年以上の経験があります。主にIT企業向けの営業を担当しており、新規開拓から既存顧客のフォローまで幅広く対応しています。趣味は読書とゴルフです。休日は家族と過ごすことが多く、時々ゴルフに行くこともあります。よろしくお願いします。",
-        status: "pending",
-        isSend: false,
-      },
-      {
-        uniqueId: "user2",
-        userId: "user2",
-        name: "鈴木花子|デザイナー",
-        nickname: "鈴木花子",
-        profile:
-          "UIデザインとUXデザインを専門としています。これまでに100以上のWebサイトやアプリのデザインに携わってきました。デザインの傍ら、若手デザイナーの育成にも力を入れています。最近はアクセシビリティにも注目しています。",
-        status: "pending",
-        isSend: false,
-      },
-      {
-        uniqueId: "user3",
-        userId: "user3",
-        name: "佐藤一郎@エンジニア",
-        nickname: "佐藤一郎",
-        profile:
-          "フルスタックエンジニアとして活動中。フロントエンドはReact、バックエンドはNode.jsを主に使用しています。最近はAIやブロックチェーンにも興味があり、個人開発でいくつかプロジェクトを進めています。",
-        status: "pending",
-        isSend: false,
-      },
-      {
-        uniqueId: "user4",
-        userId: "user4",
-        name: "田中企画",
-        nickname: "田中企画",
-        profile:
-          "Webサービスの企画・開発に携わって8年目です。ユーザー目線を大切にした企画立案を心がけています。最近は特にBtoBのSaaSプロダクトの企画に注力しており、市場調査から要件定義まで担当しています。",
-        status: "pending",
-        isSend: false,
-      },
-    ];
-    addUsers(debugUsers);
-    setLogs((prev) => [...prev, "デバッグユーザーを追加しました"]);
-  };
-
   const handleImportClick = () => {
     if (users.length > 0) {
       if (confirm("インポートしたデータは既存のデータに追加されます。もし別のCSVを追加せず新しく使用したい場合はクリアしてからインポートしてください。CSVをインポートしますか？")) {
@@ -335,8 +278,6 @@ export default function Home() {
       setLogs(prev => [...prev, "Chromeの起動中にエラーが発生しました"]);
     }
   };
-
-
 
   return (
     <Box sx={{ 

@@ -6,13 +6,10 @@ import {
   Toolbar,
   Typography,
   Box,
-  IconButton,
-  Tooltip,
   Button,
 } from "@mui/material";
 import {
   Email as EmailIcon,
-  Refresh as RefreshIcon,
   Help as HelpIcon,
   FileDownload as FileDownloadIcon,
 } from "@mui/icons-material";
@@ -40,10 +37,6 @@ export function Header() {
     });
 
     exportToCsv(latestUsers);
-  };
-
-  const handleRefresh = () => {
-    window.location.reload();
   };
 
   return (
@@ -79,11 +72,6 @@ export function Header() {
             >
               一時保存
             </Button>
-            {/* <Tooltip title="リロード">
-              <IconButton color="inherit" onClick={handleRefresh} size="large">
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip> */}
           </Box>
         </Toolbar>
       </AppBar>

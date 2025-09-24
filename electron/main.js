@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const http = require("http");
 const isDev = process.env.NODE_ENV === "development";
 const FollowerScraper = require("../src/lib/scraper");
 const DMSender = require("../src/lib/dmSender");
@@ -90,7 +89,7 @@ async function createWindow() {
   // エラーハンドリング
   mainWindow.webContents.on(
     "did-fail-load",
-    (event, errorCode, errorDescription) => {
+    (_event, errorCode, errorDescription) => {
       console.error("Page failed to load:", errorCode, errorDescription);
       if (isDev) {
         console.log("Retrying connection to dev server...");
@@ -169,7 +168,7 @@ ipcMain.handle(
 // DM送信のIPCハンドラー
 ipcMain.handle(
   "send-dm",
-  async (event, { user, message, settings: dmSettings }) => {
+  async (_event, { user, message, settings: dmSettings }) => {
     // Pythonコードと同じ：各DM送信で新しいインスタンスを作成
     const sender = new DMSender({
       debugPort: settings.get("debugPort"),

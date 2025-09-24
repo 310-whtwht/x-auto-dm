@@ -24,49 +24,35 @@ npm run dev
 
 #### 必要なもの
 
-- macOS (Intel/Apple Silicon対応)
+- macOS (Intel/Apple Silicon 対応)
 - Google Chrome
 - インターネット接続
 
 #### 詳細なセットアップ手順
 
-1. **Homebrewのインストール**
+1. **Homebrew のインストール**
+
    ```bash
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    ```
 
-2. **pyenvのインストール**
-   ```bash
-   brew install pyenv
-   echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
-   echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
-   echo 'eval "$(pyenv init -)"' >> ~/.zshrc
-   ```
+2. **Node.js のインストール**
 
-3. **Python 3.11のインストール**
-   ```bash
-   pyenv install 3.11.2
-   pyenv local 3.11.2
-   ```
-
-4. **Node.jsのインストール**
    ```bash
    brew install node
    ```
 
-5. **依存関係のインストール**
+3. **依存関係のインストール**
+
    ```bash
-   # Python依存関係
-   pip install -r requirements.txt
-   
    # Node.js依存関係
    npm install
-   
+
    # ChromeDriver同期
    npm run sync-chromedriver
    ```
 
-6. **アプリケーション起動**
+4. **アプリケーション起動**
    ```bash
    npm run dev
    ```
@@ -80,17 +66,10 @@ npm run dev
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
 ```
 
-2. フォロワー情報の抽出
-
-```bash
-python scripts/scrape_followers.py [ターゲットユーザー名]
-```
-
-3. アプリケーションで CSV ファイルをインポートし、DM 送信を開始
+2. アプリケーションでフォロワー情報を取得し、DM 送信を開始
 
 ## 注意事項
 
-- フォロワー情報の抽出時は、X にログインした状態で実行してください
 - DM 送信は 1 日の制限があるため、適切な間隔を設定してください
 
 ## 設定項目
@@ -113,7 +92,7 @@ python scripts/scrape_followers.py [ターゲットユーザー名]
 
 ### ChromeDriver バージョンエラー
 
-Chromeがアップデートされた後に以下のエラーが発生した場合：
+Chrome がアップデートされた後に以下のエラーが発生した場合：
 
 ```
 chromedriver version (139.0.6943.98) ... might not be compatible with ... chrome version (140.0.xxxx.xx)
@@ -122,20 +101,23 @@ chromedriver version (139.0.6943.98) ... might not be compatible with ... chrome
 **解決方法：**
 
 1. **自動同期（推奨）**
+
    ```bash
    npm run sync-chromedriver
    ```
 
 2. **手動でのバージョン確認**
+
    ```bash
    # Chromeのバージョンを確認
    /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --version
-   
+
    # ChromeDriverのバージョンを確認
    ./node_modules/.bin/chromedriver --version
    ```
 
-3. **手動でChromeDriverを更新**
+3. **手動で ChromeDriver を更新**
+
    ```bash
    npm install chromedriver@latest
    ```
@@ -147,8 +129,9 @@ chromedriver version (139.0.6943.98) ... might not be compatible with ... chrome
    ```
 
 **予防策：**
-- Chromeの自動アップデートを有効にしている場合は、定期的に `npm run sync-chromedriver` を実行
-- 週に1回程度の定期チェックを推奨
+
+- Chrome の自動アップデートを有効にしている場合は、定期的に `npm run sync-chromedriver` を実行
+- 週に 1 回程度の定期チェックを推奨
 
 ## 注意事項
 
@@ -167,21 +150,20 @@ MIT License
 - Next.js 14
 - TypeScript
 - Material-UI
-- Python (Selenium)
+- Electron
 
 ### プロジェクト構造
 
 ```
-x-send-dm/
+x-auto-dm/
 ├── src/
 │ ├── app/ # Next.jsページコンポーネント
 │ ├── components/ # 共通コンポーネント
-│ ├── contexts/ # Reactコンテキスト
 │ ├── hooks/ # カスタムフック
 │ ├── lib/ # ユーティリティ関数
 │ └── types/ # 型定義
-├── scripts/ # Pythonスクリプト
-├── public/ # 静的ファイル
+├── electron/ # Electronメインプロセス
+├── dist/ # ビルド成果物
 └── package.json # 依存関係の定義
 ```
 

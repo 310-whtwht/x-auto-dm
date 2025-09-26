@@ -24,11 +24,13 @@ npm run dev
 
 #### 必要なもの
 
-- macOS (Intel/Apple Silicon 対応)
+- macOS (Intel/Apple Silicon 対応)、Windows (x64)、または Linux (x64)
 - Google Chrome
 - インターネット接続
 
 #### 詳細なセットアップ手順
+
+##### macOS 用
 
 1. **Homebrew のインストール**
 
@@ -57,13 +59,73 @@ npm run dev
    npm run dev
    ```
 
+##### Windows 用
+
+1. **Node.js のインストール**
+
+   [Node.js 公式サイト](https://nodejs.org/)から LTS 版をダウンロードしてインストール
+
+2. **依存関係のインストール**
+
+   ```cmd
+   # Node.js依存関係
+   npm install
+
+   # ChromeDriver同期
+   npm run sync-chromedriver
+   ```
+
+3. **アプリケーション起動**
+   ```cmd
+   npm run dev
+   ```
+
+##### Linux 用
+
+1. **Node.js のインストール**
+
+   ```bash
+   # Ubuntu/Debian
+   curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+   sudo apt-get install -y nodejs
+
+   # CentOS/RHEL/Fedora
+   curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
+   sudo yum install -y nodejs
+   ```
+
+2. **依存関係のインストール**
+
+   ```bash
+   # Node.js依存関係
+   npm install
+
+   # ChromeDriver同期
+   npm run sync-chromedriver
+   ```
+
+3. **アプリケーション起動**
+   ```bash
+   npm run dev
+   ```
+
 ## 使用方法
 
 1. Chrome ブラウザをデバッグモードで起動
 
 ```bash
-# Macの場合
+# macOSの場合
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+```
+
+```cmd
+REM Windowsの場合
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222
+```
+
+```bash
+# Linuxの場合
+google-chrome --remote-debugging-port=9222
 ```
 
 2. アプリケーションでフォロワー情報を取得し、DM 送信を開始
@@ -142,6 +204,45 @@ chromedriver version (139.0.6943.98) ... might not be compatible with ... chrome
 ## ライセンス
 
 MIT License
+
+## ビルド
+
+### 開発用ビルド
+
+```bash
+# macOS
+npm run dev
+
+# Windows
+npm run dev
+```
+
+### 本番用ビルド
+
+```bash
+# macOS用ビルド
+npm run build:mac
+
+# Windows用ビルド
+npm run build:win
+
+# Windows 64bit専用ビルド
+npm run build:win64
+
+# macOS + Windows用ビルド（推奨）
+npm run build:all
+
+# 全プラットフォーム用ビルド（macOS + Windows + Linux）
+npm run build:all-platforms
+```
+
+ビルドされたファイルは `dist/` ディレクトリに出力されます。
+
+#### ビルド形式
+
+- **macOS**: DMG 形式（インストーラー）
+- **Windows**: NSIS 形式（インストーラー）+ Portable 形式
+- **Linux**: AppImage 形式 + DEB 形式（Debian/Ubuntu 用）
 
 ## 開発者向け情報
 

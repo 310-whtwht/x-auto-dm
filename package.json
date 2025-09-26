@@ -10,9 +10,15 @@
     "start": "next start",
     "dev": "npm run next:dev & sleep 5 && NODE_ENV=development electron .",
     "build": "npm run next:build && electron-builder",
+    "build:mac": "npm run next:build && electron-builder --mac",
+    "build:win": "npm run next:build && electron-builder --win",
+    "build:win64": "npm run next:build && electron-builder --win --x64",
+    "build:all": "npm run next:build && electron-builder --mac --win",
+    "build:all-platforms": "npm run next:build && electron-builder --mac --win --linux",
     "lint": "next lint",
     "sync-chromedriver": "node scripts/sync-chromedriver.js",
-    "setup": "chmod +x setup.sh && ./setup.sh"
+    "setup": "chmod +x setup.sh && ./setup.sh",
+    "setup:win": "setup.bat"
   },
   "dependencies": {
     "fs-extra": "^11.3.0",
@@ -81,6 +87,41 @@
         }
       ],
       "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Utility"
     },
     "directories": {
       "output": "dist"

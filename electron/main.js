@@ -201,8 +201,17 @@ ipcMain.handle("launch-chrome", async () => {
     console.log("既存のChromeプロセスを終了中...");
     try {
       await new Promise((resolve, reject) => {
-        exec("pkill -f chrome", (error) => {
-          if (error && !error.message.includes("No matching processes")) {
+        const killCommand =
+          process.platform === "win32"
+            ? "taskkill /f /im chrome.exe"
+            : "pkill -f chrome";
+
+        exec(killCommand, (error) => {
+          if (
+            error &&
+            !error.message.includes("No matching processes") &&
+            !error.message.includes("not found")
+          ) {
             console.log("Chromeプロセス終了:", error.message);
           }
           resolve();
@@ -215,8 +224,17 @@ ipcMain.handle("launch-chrome", async () => {
     // ChromeDriverプロセスも終了
     try {
       await new Promise((resolve, reject) => {
-        exec("pkill -f chromedriver", (error) => {
-          if (error && !error.message.includes("No matching processes")) {
+        const killDriverCommand =
+          process.platform === "win32"
+            ? "taskkill /f /im chromedriver.exe"
+            : "pkill -f chromedriver";
+
+        exec(killDriverCommand, (error) => {
+          if (
+            error &&
+            !error.message.includes("No matching processes") &&
+            !error.message.includes("not found")
+          ) {
             console.log("ChromeDriverプロセス終了:", error.message);
           }
           resolve();
@@ -231,12 +249,27 @@ ipcMain.handle("launch-chrome", async () => {
 
     // Chromeのパスを検索
     const findChromePath = async () => {
-      const possiblePaths = [
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        "/Applications/Chromium.app/Contents/MacOS/Chromium",
-        "/usr/bin/google-chrome",
-        "/usr/bin/chromium-browser",
-      ];
+      const platform = process.platform;
+      let possiblePaths = [];
+
+      if (platform === "win32") {
+        // Windows
+        possiblePaths = [
+          "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+          "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+          "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+          "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        ];
+      } else if (platform === "darwin") {
+        // macOS
+        possiblePaths = [
+          "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+          "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        ];
+      } else {
+        // Linux
+        possiblePaths = ["/usr/bin/google-chrome", "/usr/bin/chromium-browser"];
+      }
 
       for (const chromePath of possiblePaths) {
         if (fs.existsSync(chromePath)) {
